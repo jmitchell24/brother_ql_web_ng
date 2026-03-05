@@ -1,5 +1,10 @@
-# ignore config.json
+# runtime / local files
 config.json
+saved_configs.json
+screenshots/
+*.png
+*.jpg
+*.jpeg
 
 ### Python template
 # Byte-compiled / optimized / DLL files

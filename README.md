@@ -1,89 +1,146 @@
-## brother\_ql\_web
+<div align="center">
+  <img src="static/logo.svg" width="96" height="96" alt="brother_ql_web_ng logo"/>
+  <h1>brother_ql_web_ng</h1>
+  <p>A modernised web interface for Brother QL label printers.</p>
 
-This is a web service to print labels on Brother QL label printers.
+  [![Python](https://img.shields.io/badge/python-3.8%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
+  [![License](https://img.shields.io/badge/license-GPLv3-22c55e)](LICENSE)
+  [![Bootstrap](https://img.shields.io/badge/bootstrap-5.3.3-7c3aed?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+  [![Vibe coded](https://img.shields.io/badge/vibe_coded_with-Claude%20Sonnet-d97706?logo=anthropic&logoColor=white)](https://claude.ai)
+</div>
 
-You need Python 3 for this software to work.
+---
 
-![Screenshot](./static/images/screenshots/Label-Designer_Desktop.png)
+> **Fork of [pklaus/brother_ql_web](https://github.com/pklaus/brother_ql_web)** — the original lightweight Bottle/Python label printing web service.
+> This fork was **largely vibe-coded with [Claude Sonnet](https://claude.ai)** (Anthropic) in a single session. The underlying printing logic is unchanged; everything you see in the UI is new.
 
-The web interface is [responsive](https://en.wikipedia.org/wiki/Responsive_web_design).
-There's also a screenshot showing [how it looks on a smartphone](./static/images/screenshots/Label-Designer_Phone.png)
+## What's new
 
-### Installation
+- **Bootstrap 5.3.3** — replaced the old Bootstrap 3 / Glyphicons stack with CDN-served Bootstrap 5 + Bootstrap Icons
+- **Dark / light mode** toggle, persisted across page loads
+- **Responsive sidebar layout** — label designer on the left, saved configs + printer status on the right; collapses gracefully on mobile
+- **Image upload** — embed a PNG/JPG alongside (or instead of) text on a label
+- **Border option** — add a configurable-width border around the label
+- **Printer status panel** — live USB device info, ink/media status, error state
+- **Named config system** — save, load, rename, duplicate, reorder, and delete any number of named print configs, persisted to `saved_configs.json`
+  - Drag-to-reorder with server-side persistence
+  - Per-config **Save** button to overwrite with current settings
+  - Relative timestamps ("just now", "3 min ago", "yesterday", …)
+- **Overwrite / delete confirmations** on all destructive actions
 
-**ProTip™**: If you know how to use Docker, you might want to use my ready-to-use Docker image to deploy this software.
-It can be found [on the Docker hub](https://hub.docker.com/r/pklaus/brother_ql_web/).  
-Otherwise, follow the instructions below.
+## Screenshots
 
-Get the code:
+| Desktop | Mobile |
+|---------|--------|
+| ![Desktop](static/images/screenshots/Label-Designer_Desktop.png) | ![Phone](static/images/screenshots/Label-Designer_Phone.png) |
 
-    git clone https://github.com/pklaus/brother_ql_web.git
+## Requirements
 
-or download [the ZIP file](https://github.com/pklaus/brother_ql_web/archive/master.zip) and unpack it.
+- Python 3.8+
+- `fontconfig` on your system (`fc-list`) — pre-installed on most Linux distros; on macOS: `brew install fontconfig`
+- A Brother QL printer accessible via USB (`pyusb`) or TCP
 
-Install the requirements:
+## Installation
 
-    pip install -r requirements.txt
+```bash
+git clone https://github.com/YOUR_USERNAME/brother_ql_web_ng.git
+cd brother_ql_web_ng
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-In addition, `fontconfig` should be installed on your system. It's used to identify and
-inspect fonts on your machine. This package is pre-installed on many Linux distributions.
-If you're using a Mac, I recommend to use [Homebrew](https://brew.sh) to install
-fontconfig using [`brew install fontconfig`](http://brewformulas.org/Fontconfig).
+### USB permissions (Linux)
 
-### Configuration file
+If the printer is USB and you don't want to run as root, add a udev rule:
 
-Copy `config.example.json` to `config.json` (e.g. `cp config.example.json config.json`) and adjust the values to match your needs.
+```
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04f9", MODE="0666"
+```
 
-### Startup
+Save to `/etc/udev/rules.d/99-brother-ql.rules` and reload: `sudo udevadm control --reload-rules`.
 
-To start the server, run `./brother_ql_web.py`. The command line parameters overwrite the values configured in `config.json`. Here's its command line interface:
+## Configuration
 
-    usage: brother_ql_web.py [-h] [--port PORT] [--loglevel LOGLEVEL]
-                             [--font-folder FONT_FOLDER]
-                             [--default-label-size DEFAULT_LABEL_SIZE]
-                             [--default-orientation {standard,rotated}]
-                             [--model {QL-500,QL-550,QL-560,QL-570,QL-580N,QL-650TD,QL-700,QL-710W,QL-720NW,QL-1050,QL-1060N}]
-                             [printer]
-    
-    This is a web service to print labels on Brother QL label printers.
-    
-    positional arguments:
-      printer               String descriptor for the printer to use (like
-                            tcp://192.168.0.23:9100 or file:///dev/usb/lp0)
-    
-    optional arguments:
-      -h, --help            show this help message and exit
-      --port PORT
-      --loglevel LOGLEVEL
-      --font-folder FONT_FOLDER
-                            folder for additional .ttf/.otf fonts
-      --default-label-size DEFAULT_LABEL_SIZE
-                            Label size inserted in your printer. Defaults to 62.
-      --default-orientation {standard,rotated}
-                            Label orientation, defaults to "standard". To turn
-                            your text by 90°, state "rotated".
-      --model {QL-500,QL-550,QL-560,QL-570,QL-580N,QL-650TD,QL-700,QL-710W,QL-720NW,QL-1050,QL-1060N}
-                            The model of your printer (default: QL-500)
+```bash
+cp config.example.json config.json
+```
 
-### Usage
+Edit `config.json` to set your printer model, connection string, default label size, and port.
 
-Once it's running, access the web interface by opening the page with your browser.
-If you run it on your local machine, go to <http://localhost:8013> (You can change
-the default port 8013 using the --port argument).
-You will then be forwarded by default to the interactive web gui located at `/labeldesigner`.
+```json
+{
+  "SERVER":  { "PORT": 8013 },
+  "PRINTER": { "MODEL": "QL-700", "PRINTER": "usb://0x04f9:0x2042" },
+  "LABEL":   { "DEFAULT_SIZE": "29x90", "DEFAULT_ORIENTATION": "standard" }
+}
+```
 
-All in all, the web server offers:
+Supported printer connection strings:
 
-* a Web GUI allowing you to print your labels at `/labeldesigner`,
-* an API at `/api/print/text?text=Your_Text&font_size=100&font_family=Minion%20Pro%20(%20Semibold%20)`
-  to print a label containing 'Your Text' with the specified font properties.
+| Backend | Example |
+|---------|---------|
+| USB (pyusb) | `usb://0x04f9:0x2042` |
+| Network | `tcp://192.168.1.50:9100` |
+| File / devnode | `file:///dev/usb/lp0` |
 
-### License
+## Startup
 
-This software is published under the terms of the GPLv3, see the LICENSE file in the repository.
+```bash
+.venv/bin/python brother_ql_web.py
+```
 
-Parts of this package are redistributed software products from 3rd parties. They are subject to different licenses:
+Command-line arguments override `config.json`:
 
-* [Bootstrap](https://github.com/twbs/bootstrap), MIT License
-* [Glyphicons](https://getbootstrap.com/docs/3.3/components/#glyphicons), MIT License (as part of Bootstrap 3.3)
-* [jQuery](https://github.com/jquery/jquery), MIT License
+```
+usage: brother_ql_web.py [-h] [--port PORT] [--loglevel LOGLEVEL]
+                         [--font-folder FONT_FOLDER]
+                         [--default-label-size DEFAULT_LABEL_SIZE]
+                         [--default-orientation {standard,rotated}]
+                         [--model {QL-500,...,QL-1060N}]
+                         [printer]
+```
+
+Then open **http://localhost:8013** in your browser.
+
+## API
+
+A minimal text-print endpoint is available for scripted use:
+
+```
+GET /api/print/text?text=Hello&font_size=80&font_family=DejaVu+Serif&label_size=29x90
+```
+
+## Project structure
+
+```
+brother_ql_web.py      # Bottle app + REST API
+font_helpers.py        # fc-list font discovery
+config.example.json    # template config (copy → config.json)
+saved_configs.json     # runtime config store (gitignored)
+views/
+  base.jinja2          # Bootstrap 5 base template
+  labeldesigner.jinja2 # main UI
+static/
+  logo.svg             # repo logo
+  css/custom.css
+```
+
+## License
+
+GPLv3 — see [LICENSE](LICENSE).
+
+Third-party components bundled or loaded from CDN:
+
+| Component | License |
+|-----------|---------|
+| [Bootstrap 5](https://github.com/twbs/bootstrap) | MIT |
+| [Bootstrap Icons](https://icons.getbootstrap.com/) | MIT |
+| [jQuery](https://github.com/jquery/jquery) | MIT |
+| [brother_ql](https://github.com/pklaus/brother_ql) | GPL |
+
+---
+
+<div align="center">
+  <sub>Based on <a href="https://github.com/pklaus/brother_ql_web">pklaus/brother_ql_web</a> · UI rewrite vibe-coded with <a href="https://claude.ai">Claude Sonnet</a> (Anthropic)</sub>
+</div>
