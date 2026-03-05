@@ -176,7 +176,8 @@ def create_label_im(text, **kwargs):
 
     # --- Layout ---
     if orientation == 'standard':
-        img_y = kwargs['margin_top']
+        # Centre image vertically in the full label (matches how text is centred on die-cut labels)
+        img_y = (height - img_h) // 2 if img_h else kwargs['margin_top']
 
         if label_img:
             img_align = kwargs['image_align']
