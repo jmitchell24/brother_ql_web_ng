@@ -175,7 +175,7 @@
     <textarea rows="8" id="labelText" class="form-control" onchange="preview()" oninput="preview()"></textarea>
   </div>
 
-  {# Right column: preview + print + printer info — within the main 9-col area #}
+  {# Right column: preview + print #}
   <div class="col-md-4">
     <label class="form-label">Preview</label>
     <div class="mb-2">
@@ -184,50 +184,55 @@
     <p class="text-body-secondary small mb-3">
       Printed size: <span id="labelWidth">?</span> cm &times; <span id="labelHeight">?</span> cm
     </p>
-    <button id="printButton" type="button" class="btn btn-primary w-100 mb-3" onclick="print()">
+    <button id="printButton" type="button" class="btn btn-primary w-100 mb-2" onclick="print()">
       <i class="bi bi-printer me-2"></i>Print
     </button>
-
-    <div class="card">
-      <div class="card-header d-flex align-items-center justify-content-between">
-        <span><i class="bi bi-printer me-2"></i>Printer</span>
-        <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-borderless mb-0 small">
-          <tbody id="printerInfoTable">
-            <tr><td class="text-body-secondary ps-3">Model</td><td id="pi-model">—</td></tr>
-            <tr><td class="text-body-secondary ps-3">Connection</td><td id="pi-printer" class="text-break font-monospace" style="font-size:0.75em"></td></tr>
-            <tr><td class="text-body-secondary ps-3">Default label</td><td id="pi-label">—</td></tr>
-            <tr id="pi-row-serial" style="display:none"><td class="text-body-secondary ps-3">Serial</td><td id="pi-serial" class="font-monospace" style="font-size:0.75em"></td></tr>
-            <tr id="pi-row-usb" style="display:none"><td class="text-body-secondary ps-3">USB</td><td id="pi-usb"></td></tr>
-            <tr id="pi-row-speed" style="display:none"><td class="text-body-secondary ps-3">Speed</td><td id="pi-speed"></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="printResultPanel" class="card-footer py-2 small" style="display:none"></div>
-    </div>
+    <div id="printResultPanel" class="small py-1" style="display:none"></div>
   </div>
   </div>{# end inner row #}
   </div>{# end col-lg-9 #}
 
-  {# Sidebar: saved configs #}
+  {# Sidebar: saved configs + printer info #}
   <div class="col-lg-3">
     <div class="sticky-top" style="top: 1rem">
-      <div class="card">
-        <div class="card-header">
-          <i class="bi bi-bookmark me-2"></i>Saved Configs
+
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-bookmark me-2"></i>Saved Configs</span>
+          <button class="btn btn-sm btn-outline-danger py-0" title="Delete all" onclick="deleteAllConfigs()">
+            <i class="bi bi-trash"></i>
+          </button>
         </div>
         <div class="card-body pb-2">
           <input id="configName" class="form-control form-control-sm mb-2" type="text" placeholder="Config name…" maxlength="80">
           <button class="btn btn-sm btn-primary w-100 mb-3" type="button" onclick="saveConfig()">
             <i class="bi bi-floppy me-1"></i>Save current
           </button>
-          <div id="configList" class="list-group list-group-flush" style="max-height: 55vh; overflow-y: auto;">
+          <div id="configList" class="list-group list-group-flush" style="max-height: 40vh; overflow-y: auto;">
             <div class="list-group-item text-body-secondary small px-0">Loading…</div>
           </div>
         </div>
       </div>
+
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-printer me-2"></i>Printer</span>
+          <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-borderless mb-0 small">
+            <tbody id="printerInfoTable">
+              <tr><td class="text-body-secondary ps-3">Model</td><td id="pi-model">—</td></tr>
+              <tr><td class="text-body-secondary ps-3">Connection</td><td id="pi-printer" class="text-break font-monospace" style="font-size:0.75em"></td></tr>
+              <tr><td class="text-body-secondary ps-3">Default label</td><td id="pi-label">—</td></tr>
+              <tr id="pi-row-serial" style="display:none"><td class="text-body-secondary ps-3">Serial</td><td id="pi-serial" class="font-monospace" style="font-size:0.75em"></td></tr>
+              <tr id="pi-row-usb" style="display:none"><td class="text-body-secondary ps-3">USB</td><td id="pi-usb"></td></tr>
+              <tr id="pi-row-speed" style="display:none"><td class="text-body-secondary ps-3">Speed</td><td id="pi-speed"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -423,6 +428,7 @@ function saveConfig() {
 
 function loadConfig(name) {
   $.getJSON('/api/configs/' + encodeURIComponent(name), function(d) {
+    $('#configName').val(name);
     // Text
     $('#labelText').val(d.text || '');
     // Font
@@ -465,6 +471,16 @@ function deleteConfig(name, $item) {
     url: '/api/configs/' + encodeURIComponent(name),
     success: function() { $item.remove(); if ($('#configList .list-group-item').length === 0) refreshConfigList(); },
     error: function() { alert('Failed to delete config.'); }
+  });
+}
+
+function deleteAllConfigs() {
+  if (!confirm('Delete ALL saved configs? This cannot be undone.')) return;
+  $.ajax({
+    type: 'DELETE',
+    url: '/api/configs',
+    success: function() { refreshConfigList(); },
+    error: function() { alert('Failed to delete all configs.'); }
   });
 }
 

@@ -393,6 +393,12 @@ def delete_config(name):
     _save_configs(configs)
     return json.dumps({'success': True})
 
+@delete('/api/configs')
+def delete_all_configs():
+    response.content_type = 'application/json'
+    _save_configs({})
+    return json.dumps({'success': True})
+
 def main():
     global DEBUG, FONTS, BACKEND_CLASS, CONFIG
     parser = argparse.ArgumentParser(description=__doc__)
