@@ -116,8 +116,10 @@ def create_label_im(text, **kwargs):
         if line == '': line = ' '
         lines.append(line)
     text = '\n'.join(lines)
-    linesize = im_font.getsize(text)
-    textsize = draw.multiline_textsize(text, font=im_font)
+    bbox = im_font.getbbox('A')
+    linesize = (bbox[2] - bbox[0], bbox[3] - bbox[1])
+    multiline_bbox = draw.multiline_textbbox((0, 0), text, font=im_font)
+    textsize = (multiline_bbox[2] - multiline_bbox[0], multiline_bbox[3] - multiline_bbox[1])
     width, height = kwargs['width'], kwargs['height']
     if kwargs['orientation'] == 'standard':
         if label_type in (ENDLESS_LABEL,):
@@ -182,7 +184,7 @@ def print_text():
     try:
         context = get_label_context(request)
     except LookupError as e:
-        return_dict['error'] = e.msg
+        return_dict['error'] = str(e)
         return return_dict
 
     if context['text'] is None:
