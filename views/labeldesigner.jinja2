@@ -3,6 +3,10 @@
 {% block content %}
 <div class="row g-4">
 
+  {# Main area: label designer #}
+  <div class="col-lg-9">
+  <div class="row g-4">
+
   {# Left column: settings #}
   <div class="col-md-4">
     <div class="accordion" id="accordion">
@@ -171,7 +175,7 @@
     <textarea rows="8" id="labelText" class="form-control" onchange="preview()" oninput="preview()"></textarea>
   </div>
 
-  {# Right column: preview + print + printer info #}
+  {# Right column: preview + print + printer info — within the main 9-col area #}
   <div class="col-md-4">
     <label class="form-label">Preview</label>
     <div class="mb-2">
@@ -204,39 +208,29 @@
       <div id="printResultPanel" class="card-footer py-2 small" style="display:none"></div>
     </div>
   </div>
+  </div>{# end inner row #}
+  </div>{# end col-lg-9 #}
 
-</div>
-
-{# Saved configs #}
-<div class="row mt-4">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header d-flex align-items-center justify-content-between">
-        <span><i class="bi bi-bookmark me-2"></i>Saved Configs</span>
-        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#configsPanel" aria-expanded="false">
-          <i class="bi bi-chevron-down"></i>
-        </button>
-      </div>
-      <div id="configsPanel" class="collapse">
-        <div class="card-body">
-          <div class="row g-3 align-items-end mb-3">
-            <div class="col-sm">
-              <label for="configName" class="form-label">Config name</label>
-              <input id="configName" class="form-control" type="text" placeholder="e.g. My shelf label" maxlength="80">
-            </div>
-            <div class="col-sm-auto">
-              <button class="btn btn-primary" type="button" onclick="saveConfig()">
-                <i class="bi bi-floppy me-1"></i>Save current
-              </button>
-            </div>
-          </div>
-          <div id="configList" class="list-group">
-            <div class="list-group-item text-body-secondary small">Loading...</div>
+  {# Sidebar: saved configs #}
+  <div class="col-lg-3">
+    <div class="sticky-top" style="top: 1rem">
+      <div class="card">
+        <div class="card-header">
+          <i class="bi bi-bookmark me-2"></i>Saved Configs
+        </div>
+        <div class="card-body pb-2">
+          <input id="configName" class="form-control form-control-sm mb-2" type="text" placeholder="Config name…" maxlength="80">
+          <button class="btn btn-sm btn-primary w-100 mb-3" type="button" onclick="saveConfig()">
+            <i class="bi bi-floppy me-1"></i>Save current
+          </button>
+          <div id="configList" class="list-group list-group-flush" style="max-height: 55vh; overflow-y: auto;">
+            <div class="list-group-item text-body-secondary small px-0">Loading…</div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
 </div>
 
 {% endblock %}
@@ -389,23 +383,24 @@ function refreshConfigList() {
   $.getJSON('/api/configs', function(list) {
     var $list = $('#configList').empty();
     if (!list.length) {
-      $list.append('<div class="list-group-item text-body-secondary small">No saved configs yet.</div>');
+      $list.append('<div class="list-group-item text-body-secondary small px-0">No saved configs yet.</div>');
       return;
     }
     list.forEach(function(cfg) {
-      var $item = $('<div class="list-group-item d-flex align-items-center gap-2">');
-      $('<span class="flex-grow-1 fw-medium">').text(cfg.name).appendTo($item);
-      if (cfg.saved_at) {
-        $('<span class="text-body-secondary small">').text(cfg.saved_at).appendTo($item);
-      }
-      $('<button class="btn btn-sm btn-outline-secondary" title="Load">')
-        .html('<i class="bi bi-upload"></i> Load')
+      var $item = $('<div class="list-group-item px-0 py-2">');
+      var $top = $('<div class="d-flex align-items-center gap-1 mb-1">').appendTo($item);
+      $('<span class="flex-grow-1 fw-medium text-truncate" style="min-width:0">').text(cfg.name).appendTo($top);
+      $('<button class="btn btn-sm btn-outline-secondary flex-shrink-0" title="Load">')
+        .html('<i class="bi bi-upload"></i>')
         .on('click', function() { loadConfig(cfg.name); })
-        .appendTo($item);
-      $('<button class="btn btn-sm btn-outline-danger ms-1" title="Delete">')
+        .appendTo($top);
+      $('<button class="btn btn-sm btn-outline-danger flex-shrink-0" title="Delete">')
         .html('<i class="bi bi-trash"></i>')
         .on('click', function() { deleteConfig(cfg.name, $item); })
-        .appendTo($item);
+        .appendTo($top);
+      if (cfg.saved_at) {
+        $('<div class="text-body-secondary" style="font-size:0.72em">').text(cfg.saved_at).appendTo($item);
+      }
       $list.append($item);
     });
   });
@@ -421,11 +416,6 @@ function saveConfig() {
     data: JSON.stringify(configPayload()),
     success: function() {
       refreshConfigList();
-      // expand panel if collapsed
-      var panel = document.getElementById('configsPanel');
-      if (!panel.classList.contains('show')) {
-        new bootstrap.Collapse(panel).show();
-      }
     },
     error: function() { alert('Failed to save config.'); }
   });
