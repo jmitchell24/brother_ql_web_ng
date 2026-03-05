@@ -206,6 +206,39 @@
   </div>
 
 </div>
+
+{# Saved configs #}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-bookmark me-2"></i>Saved Configs</span>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#configsPanel" aria-expanded="false">
+          <i class="bi bi-chevron-down"></i>
+        </button>
+      </div>
+      <div id="configsPanel" class="collapse">
+        <div class="card-body">
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col-sm">
+              <label for="configName" class="form-label">Config name</label>
+              <input id="configName" class="form-control" type="text" placeholder="e.g. My shelf label" maxlength="80">
+            </div>
+            <div class="col-sm-auto">
+              <button class="btn btn-primary" type="button" onclick="saveConfig()">
+                <i class="bi bi-floppy me-1"></i>Save current
+              </button>
+            </div>
+          </div>
+          <div id="configList" class="list-group">
+            <div class="list-group-item text-body-secondary small">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block javascript %}
@@ -343,4 +376,107 @@ function updatePrinterInfo() {
 updatePrinterInfo();
 setInterval(updatePrinterInfo, 5000);
 preview();
+
+// ---- Saved configs ----
+
+function configPayload() {
+  var d = formData();
+  d.text = $('#labelText').val(); // save actual text (not replaced with space)
+  return d;
+}
+
+function refreshConfigList() {
+  $.getJSON('/api/configs', function(list) {
+    var $list = $('#configList').empty();
+    if (!list.length) {
+      $list.append('<div class="list-group-item text-body-secondary small">No saved configs yet.</div>');
+      return;
+    }
+    list.forEach(function(cfg) {
+      var $item = $('<div class="list-group-item d-flex align-items-center gap-2">');
+      $('<span class="flex-grow-1 fw-medium">').text(cfg.name).appendTo($item);
+      if (cfg.saved_at) {
+        $('<span class="text-body-secondary small">').text(cfg.saved_at).appendTo($item);
+      }
+      $('<button class="btn btn-sm btn-outline-secondary" title="Load">')
+        .html('<i class="bi bi-upload"></i> Load')
+        .on('click', function() { loadConfig(cfg.name); })
+        .appendTo($item);
+      $('<button class="btn btn-sm btn-outline-danger ms-1" title="Delete">')
+        .html('<i class="bi bi-trash"></i>')
+        .on('click', function() { deleteConfig(cfg.name, $item); })
+        .appendTo($item);
+      $list.append($item);
+    });
+  });
+}
+
+function saveConfig() {
+  var name = $('#configName').val().trim();
+  if (!name) { alert('Please enter a config name.'); return; }
+  $.ajax({
+    type: 'POST',
+    url: '/api/configs/' + encodeURIComponent(name),
+    contentType: 'application/json',
+    data: JSON.stringify(configPayload()),
+    success: function() {
+      refreshConfigList();
+      // expand panel if collapsed
+      var panel = document.getElementById('configsPanel');
+      if (!panel.classList.contains('show')) {
+        new bootstrap.Collapse(panel).show();
+      }
+    },
+    error: function() { alert('Failed to save config.'); }
+  });
+}
+
+function loadConfig(name) {
+  $.getJSON('/api/configs/' + encodeURIComponent(name), function(d) {
+    // Text
+    $('#labelText').val(d.text || '');
+    // Font
+    $('#fontFamily option').filter(function() { return $(this).text() === d.font_family; }).prop('selected', true);
+    $('#fontSize').val(d.font_size);
+    // Alignment
+    $('input[name=fontAlign][value="' + (d.align || 'center') + '"]').prop('checked', true);
+    // Label size
+    $('#labelSize').val(d.label_size);
+    // Orientation
+    $('input[name=orientation][value="' + (d.orientation || 'standard') + '"]').prop('checked', true);
+    // Margins
+    $('#marginTop').val(d.margin_top);
+    $('#marginBottom').val(d.margin_bottom);
+    $('#marginLeft').val(d.margin_left);
+    $('#marginRight').val(d.margin_right);
+    // Border
+    var borderOn = d.border === 'true' || d.border === true;
+    $('#borderEnabled').prop('checked', borderOn);
+    $('#borderWidthRow').toggle(borderOn);
+    if (borderOn) $('#borderWidth').val(d.border_width);
+    // Image
+    if (d.image_data) {
+      cachedImageData = d.image_data;
+      $('#imageOptions, #imageClearBtn').show();
+    } else {
+      clearImage();
+    }
+    $('#imageBw').prop('checked', d.image_bw !== 'false' && d.image_bw !== false);
+    $('input[name=imageAlign][value="' + (d.image_align || 'left') + '"]').prop('checked', true);
+    $('#imageGap').val(d.image_gap || 20);
+    preview();
+  });
+}
+
+function deleteConfig(name, $item) {
+  if (!confirm('Delete config "' + name + '"?')) return;
+  $.ajax({
+    type: 'DELETE',
+    url: '/api/configs/' + encodeURIComponent(name),
+    success: function() { $item.remove(); if ($('#configList .list-group-item').length === 0) refreshConfigList(); },
+    error: function() { alert('Failed to delete config.'); }
+  });
+}
+
+refreshConfigList();
 {% endblock %}

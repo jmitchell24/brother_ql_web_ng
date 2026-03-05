@@ -5,10 +5,10 @@
 This is a web service to print labels on Brother QL label printers.
 """
 
-import sys, logging, random, json, argparse, re, base64
+import sys, logging, random, json, argparse, re, base64, os
 from io import BytesIO
 
-from bottle import run, route, get, post, response, request, jinja2_view as view, static_file, redirect, BaseRequest
+from bottle import run, route, get, post, delete, response, request, jinja2_view as view, static_file, redirect, BaseRequest, abort
 BaseRequest.MEMFILE_MAX = 16 * 1024 * 1024  # 16 MB — needed for image uploads
 from PIL import Image, ImageDraw, ImageFont
 
@@ -338,6 +338,60 @@ def print_text():
     return_dict['success'] = True
     if DEBUG: return_dict['data'] = str(qlr.data)
     return return_dict
+
+SAVED_CONFIGS_FILE = 'saved_configs.json'
+
+def _load_saved_configs():
+    if not os.path.exists(SAVED_CONFIGS_FILE):
+        return {}
+    try:
+        with open(SAVED_CONFIGS_FILE, encoding='utf-8') as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
+
+def _save_configs(configs):
+    with open(SAVED_CONFIGS_FILE, 'w', encoding='utf-8') as fh:
+        json.dump(configs, fh, ensure_ascii=False, indent=2)
+
+@get('/api/configs')
+def list_configs():
+    response.content_type = 'application/json'
+    configs = _load_saved_configs()
+    return json.dumps([{'name': name, 'saved_at': v.get('saved_at', '')} for name, v in sorted(configs.items())])
+
+@post('/api/configs/<name>')
+def save_config(name):
+    response.content_type = 'application/json'
+    if not name or len(name) > 80:
+        abort(400, 'Invalid config name')
+    data = request.json
+    if not isinstance(data, dict):
+        abort(400, 'Expected JSON object')
+    from datetime import datetime
+    configs = _load_saved_configs()
+    data['saved_at'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    configs[name] = data
+    _save_configs(configs)
+    return json.dumps({'success': True})
+
+@get('/api/configs/<name>')
+def load_config(name):
+    response.content_type = 'application/json'
+    configs = _load_saved_configs()
+    if name not in configs:
+        abort(404, 'Config not found')
+    return json.dumps(configs[name])
+
+@delete('/api/configs/<name>')
+def delete_config(name):
+    response.content_type = 'application/json'
+    configs = _load_saved_configs()
+    if name not in configs:
+        abort(404, 'Config not found')
+    del configs[name]
+    _save_configs(configs)
+    return json.dumps({'success': True})
 
 def main():
     global DEBUG, FONTS, BACKEND_CLASS, CONFIG
