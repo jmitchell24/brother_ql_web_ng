@@ -1,10 +1,10 @@
 # runtime / local files
 config.json
 saved_configs.json
-screenshots/
-*.png
-*.jpg
-*.jpeg
+# test prints dropped in project root
+/*.png
+/*.jpg
+/*.jpeg
 
 ### Python template
 # Byte-compiled / optimized / DLL files
