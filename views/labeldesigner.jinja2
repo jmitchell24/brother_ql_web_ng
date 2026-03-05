@@ -4,7 +4,7 @@
 <div class="row g-4">
 
   {# Main area: label designer #}
-  <div class="col-lg-9">
+  <div class="col-lg-8">
   <div class="row g-4">
 
   {# Left column: settings #}
@@ -190,10 +190,10 @@
     <div id="printResultPanel" class="small py-1" style="display:none"></div>
   </div>
   </div>{# end inner row #}
-  </div>{# end col-lg-9 #}
+  </div>{# end col-lg-8 #}
 
   {# Sidebar: saved configs + printer info #}
-  <div class="col-lg-3">
+  <div class="col-lg-4">
     <div class="sticky-top" style="top: 1rem">
 
       <div class="card mb-3">
@@ -398,18 +398,23 @@ function refreshConfigList() {
       var $item = $('<div class="list-group-item px-0 py-2">');
       var $top = $('<div class="d-flex align-items-center gap-1 mb-1">').appendTo($item);
       $('<span class="flex-grow-1 fw-medium text-truncate" style="min-width:0">').text(cfg.name).appendTo($top);
-      $('<button class="btn btn-sm btn-outline-secondary flex-shrink-0" title="Load">')
+      var $btns = $('<div class="d-flex gap-1 flex-shrink-0">').appendTo($top);
+      $('<button class="btn btn-sm btn-outline-secondary" title="Load">')
         .html('<i class="bi bi-upload"></i>')
         .on('click', function() { loadConfig(cfg.name); })
-        .appendTo($top);
-      $('<button class="btn btn-sm btn-outline-secondary flex-shrink-0" title="Duplicate">')
+        .appendTo($btns);
+      $('<button class="btn btn-sm btn-outline-secondary" title="Rename">')
+        .html('<i class="bi bi-pencil"></i>')
+        .on('click', function() { renameConfig(cfg.name); })
+        .appendTo($btns);
+      $('<button class="btn btn-sm btn-outline-secondary" title="Duplicate">')
         .html('<i class="bi bi-copy"></i>')
         .on('click', function() { duplicateConfig(cfg.name); })
-        .appendTo($top);
-      $('<button class="btn btn-sm btn-outline-danger flex-shrink-0" title="Delete">')
+        .appendTo($btns);
+      $('<button class="btn btn-sm btn-outline-danger" title="Delete">')
         .html('<i class="bi bi-trash"></i>')
         .on('click', function() { deleteConfig(cfg.name, $item); })
-        .appendTo($top);
+        .appendTo($btns);
       if (cfg.saved_at) {
         $('<div class="text-body-secondary" style="font-size:0.72em">').text(cfg.saved_at).appendTo($item);
       }
@@ -446,6 +451,35 @@ function duplicateConfig(name) {
       data: JSON.stringify(d),
       success: function() { refreshConfigList(); },
       error: function() { alert('Failed to duplicate config.'); }
+    });
+  });
+}
+
+function renameConfig(name) {
+  var newName = prompt('Rename "' + name + '" to:', name);
+  if (!newName) return;
+  newName = newName.trim();
+  if (!newName || newName === name) return;
+  if (savedConfigNames.indexOf(newName) !== -1) {
+    if (!confirm('A config named "' + newName + '" already exists. Replace it?')) return;
+  }
+  $.getJSON('/api/configs/' + encodeURIComponent(name), function(d) {
+    $.ajax({
+      type: 'POST',
+      url: '/api/configs/' + encodeURIComponent(newName),
+      contentType: 'application/json',
+      data: JSON.stringify(d),
+      success: function() {
+        $.ajax({
+          type: 'DELETE',
+          url: '/api/configs/' + encodeURIComponent(name),
+          complete: function() {
+            if ($('#configName').val() === name) $('#configName').val(newName);
+            refreshConfigList();
+          }
+        });
+      },
+      error: function() { alert('Failed to rename config.'); }
     });
   });
 }
