@@ -43,7 +43,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/brother_ql_web_ng.git
+git clone https://github.com/jmitchell24/brother_ql_web_ng.git
 cd brother_ql_web_ng
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
