@@ -1,203 +1,345 @@
 {% extends "base.jinja2" %}
 
-{% block page_title %}{{ title }}{% endblock %}
-
-{% block jumbotron %}
-  <h1>{{ website['PAGE_TITLE'] }}</h1>
-  <p>{{ website['PAGE_HEADLINE'] }}</p>
-  <!--<p><a class="btn btn-primary btn-lg" href="#" role="button">History of printed labels</a></p>-->
-{% endblock %}
-
 {% block content %}
-  <div class="row">
-    <div class="col-md-4">
-      <fieldset class="form-group">
-        <div class="panel-group" id="accordion">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">
-                <span class="glyphicon glyphicon-file" aria-hidden="true"></span> Label Size</a>
-              </h4>
-            </div>
-            <div id="collapse1" class="panel-collapse collapse">
-              <div class="chooser panel-body">
-              <label for="labelSize" style="display: none">Label Size:</label>
-              <select class="form-control" id="labelSize" onChange="preview()">
-                {% for label_size in label_sizes %}<option value="{{label_size[0]}}" {% if label['DEFAULT_SIZE'] == label_size[0] %}selected{% endif %}>{{label_size[1]}}</option>{% endfor %}
-              </select>
-              <label for="orientation" style="margin-top: 10px; margin-bottom: 0">Label Orientation:</label>
-              <div class="radio" style="margin-top: 5px;">
-                <label><input type="radio" onchange="preview()" name="orientation" value="standard" {% if default_orientation == 'standard' %}checked{% endif %}>Standard</label>
+<div class="row g-4">
+
+  {# Left column: settings #}
+  <div class="col-md-4">
+    <div class="accordion" id="accordion">
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="false">
+            <i class="bi bi-file-earmark me-2"></i> Label Size
+          </button>
+        </h2>
+        <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#accordion">
+          <div class="accordion-body">
+            <label for="labelSize" class="form-label">Size</label>
+            <select class="form-select" id="labelSize" onchange="preview()">
+              {% for label_size in label_sizes %}
+                <option value="{{ label_size[0] }}" {% if label['DEFAULT_SIZE'] == label_size[0] %}selected{% endif %}>{{ label_size[1] }}</option>
+              {% endfor %}
+            </select>
+            <label class="form-label mt-3">Orientation</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientStandard" value="standard" {% if label['DEFAULT_ORIENTATION'] != 'rotated' %}checked{% endif %}>
+                <label class="form-check-label" for="orientStandard">Standard</label>
               </div>
-              <div class="radio">
-                <label><input type="radio" onchange="preview()" name="orientation" value="rotated" {% if default_orientation == 'rotated' %}checked{% endif %}>Rotated</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientRotated" value="rotated" {% if label['DEFAULT_ORIENTATION'] == 'rotated' %}checked{% endif %}>
+                <label class="form-check-label" for="orientRotated">Rotated</label>
               </div>
-              </div> <!-- class="chooser panel-body" -->
-            </div>
-          </div>
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#collapse2">
-                  <span class="glyphicon glyphicon-text-size" aria-hidden="true"></span>
-                  Font Settings
-                </a>
-              </h4>
-            </div>
-            <div id="collapse2" class="panel-collapse collapse in">
-              <div class="chooser panel-body">
-              <label for="fontFamily">Font Family:</label>
-              <select class="form-control" id="fontFamily" onChange="preview()">
-                {% for font_family_name in font_family_names %}
-                  {% for font_style in fonts[font_family_name].keys() %}
-                    <option {% if label['DEFAULT_FONTS']['style'] == font_style and label['DEFAULT_FONTS']['family'] == font_family_name %}selected{% endif %}>{{font_family_name}} ({{ font_style }})</option>
-                  {% endfor %}
-                {% endfor %}
-              </select>
-              <label for="fontSize" >Font Size:</label>
-              <input id="fontSize" class="form-control" type="number" min="1" value="{{ label['DEFAULT_FONT_SIZE'] }}" onChange="preview()" required>
-              <label for="fontAlign" class="control-label input-group">Font Alignment:</label>
-              <div class="btn-group" data-toggle="buttons">
-                  <label class="btn btn-default">
-                      <input type="radio" name="fontAlign" onchange="preview()" value="left" aria-label="Left Align"><span class="glyphicon glyphicon-align-left" aria-hidden="true"></span>
-                  </label>
-                  <label class="btn btn-default active">
-                      <input type="radio" name="fontAlign" onchange="preview()" value="center" aria-label="Center Align" checked=""><span class="glyphicon glyphicon-align-center" aria-hidden="true"></span>
-                  </label>
-                  <label class="btn btn-default">
-                      <input type="radio" name="fontAlign" onchange="preview()" value="right" aria-label="Right Align"><span class="glyphicon glyphicon-align-right" aria-hidden="true"></span>
-                  </label>
-              </div>
-              </div> <!-- class="chooser panel-body" -->
             </div>
           </div>
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#collapse3">
-                  <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-                  Detailed Settings
-                </a>
-              </h4>
-            </div>
-            <div id="collapse3" class="panel-collapse collapse">
-              <div class="chooser panel-body">
-              <label for="marginTop">Margin Top:</label>
-              <div class="input-group marginsTopBottom">
-                <input id="marginTop" class="form-control" type="number" min="0" max="200" value="24" onChange="preview()" required>    <span class="input-group-addon">%</span>
-              </div>
-              <label for="marginBottom">Margin Bottom:</label>
-              <div class="input-group marginsTopBottom">
-                <input id="marginBottom" class="form-control" type="number" min="0" max="200" value="45" onChange="preview()" required> <span class="input-group-addon">%</span>
-              </div>
-              <label for="marginLeft">Margin Left:</label>
-              <div class="input-group marginsLeftRight">
-                <input id="marginLeft" class="form-control" type="number" min="0" max="200" value="35" onChange="preview()" required>   <span class="input-group-addon">%</span>
-              </div>
-              <label for="marginRight">Margin Right:</label>
-              <div class="input-group marginsLeftRight">
-                <input id="marginRight" class="form-control" type="number" min="0" max="200" value="35" onChange="preview()" required>  <span class="input-group-addon">%</span>
-              </div>
-              </div> <!-- class="chooser panel-body" -->
-            </div>
-          </div>
-        </div>
-      </fieldset>
-    </div>
-    <div class="col-md-4">
-      <fieldset class="form-group">
-        <label for="labelText">Label Text:</label>
-        <textarea rows="7" id="labelText" class="form-control" onChange="preview()" onInput="preview()"></textarea>
-      </fieldset>
-    </div>
-    <div class="col-md-4">
-      <fieldset class="form-group">
-        <label for="previewImg">Label Preview:</label><br />
-        <img id="previewImg" style="border: 1px solid #444; max-height: 350px; width: auto; max-width: 100%; margin-bottom: 10px;"/>
-        <p>Printed size w/o margins: <span id="labelWidth">?</span> cm x <span id="labelHeight">?</span> cm</p>
-        <button id="printButton" type="button" class="btn btn-primary btn-block btn-lg" onClick="print()">
-          <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print
-        </button>
-      </fieldset>
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title"><span class="glyphicon glyphicon-console" aria-hidden="true" style="margin-right: 0.3em"></span> Status</h3>
-        </div>
-        <div id="statusPanel" class="panel-body">
-          - undefined -
         </div>
       </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2" aria-expanded="true">
+            <i class="bi bi-type me-2"></i> Font Settings
+          </button>
+        </h2>
+        <div id="collapse2" class="accordion-collapse collapse show" data-bs-parent="#accordion">
+          <div class="accordion-body">
+            <label for="fontFamily" class="form-label">Font Family</label>
+            <select class="form-select" id="fontFamily" onchange="preview()">
+              {% for font_family_name in font_family_names %}
+                {% for font_style in fonts[font_family_name].keys() %}
+                  <option {% if label['DEFAULT_FONTS']['style'] == font_style and label['DEFAULT_FONTS']['family'] == font_family_name %}selected{% endif %}>{{ font_family_name }} ({{ font_style }})</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+            <label for="fontSize" class="form-label mt-3">Font Size</label>
+            <input id="fontSize" class="form-control" type="number" min="1" value="{{ label['DEFAULT_FONT_SIZE'] }}" onchange="preview()" required>
+            <label class="form-label mt-3">Alignment</label>
+            <div class="btn-group d-flex" role="group">
+              <input type="radio" class="btn-check" name="fontAlign" id="alignLeft" value="left" onchange="preview()">
+              <label class="btn btn-outline-secondary w-100" for="alignLeft"><i class="bi bi-text-left"></i></label>
+              <input type="radio" class="btn-check" name="fontAlign" id="alignCenter" value="center" onchange="preview()" checked>
+              <label class="btn btn-outline-secondary w-100" for="alignCenter"><i class="bi bi-text-center"></i></label>
+              <input type="radio" class="btn-check" name="fontAlign" id="alignRight" value="right" onchange="preview()">
+              <label class="btn btn-outline-secondary w-100" for="alignRight"><i class="bi bi-text-right"></i></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseImg" aria-expanded="false">
+            <i class="bi bi-image me-2"></i> Image
+          </button>
+        </h2>
+        <div id="collapseImg" class="accordion-collapse collapse" data-bs-parent="#accordion">
+          <div class="accordion-body">
+            <label for="imageFile" class="form-label">Image file</label>
+            <input class="form-control" type="file" id="imageFile" accept="image/*">
+            <button class="btn btn-sm btn-outline-secondary mt-2" type="button" id="imageClearBtn" style="display:none" onclick="clearImage()">
+              <i class="bi bi-x me-1"></i>Clear image
+            </button>
+            <div id="imageOptions" style="display:none">
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="imageBw" checked onchange="preview()">
+                <label class="form-check-label" for="imageBw">Convert to B&amp;W</label>
+              </div>
+              <label class="form-label mt-3">Image position</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
+                  <label class="form-check-label" for="imageAlignLeft">Left of text</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
+                  <label class="form-check-label" for="imageAlignRight">Right of text</label>
+                </div>
+              </div>
+              <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
+              <div class="input-group">
+                <input id="imageGap" class="form-control" type="number" min="0" max="200" value="20" onchange="preview()">
+                <span class="input-group-text">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false">
+            <i class="bi bi-gear me-2"></i> Detailed Settings
+          </button>
+        </h2>
+        <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#accordion">
+          <div class="accordion-body">
+            <div class="row g-2">
+              <div class="col-6">
+                <label for="marginTop" class="form-label">Margin Top</label>
+                <div class="input-group marginsTopBottom">
+                  <input id="marginTop" class="form-control" type="number" min="0" max="200" value="24" onchange="preview()" required>
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-6">
+                <label for="marginBottom" class="form-label">Margin Bottom</label>
+                <div class="input-group marginsTopBottom">
+                  <input id="marginBottom" class="form-control" type="number" min="0" max="200" value="45" onchange="preview()" required>
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-6">
+                <label for="marginLeft" class="form-label">Margin Left</label>
+                <div class="input-group marginsLeftRight">
+                  <input id="marginLeft" class="form-control" type="number" min="0" max="200" value="35" onchange="preview()" required>
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-6">
+                <label for="marginRight" class="form-label">Margin Right</label>
+                <div class="input-group marginsLeftRight">
+                  <input id="marginRight" class="form-control" type="number" min="0" max="200" value="35" onchange="preview()" required>
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-12 mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="borderEnabled" onchange="onBorderToggle()">
+                  <label class="form-check-label" for="borderEnabled">Add border</label>
+                </div>
+              </div>
+              <div class="col-12" id="borderWidthRow" style="display:none">
+                <label for="borderWidth" class="form-label">Border width</label>
+                <div class="input-group">
+                  <input id="borderWidth" class="form-control" type="number" min="1" max="20" value="3" onchange="preview()" required>
+                  <span class="input-group-text">px</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
+
+  {# Middle column: text input #}
+  <div class="col-md-4">
+    <label for="labelText" class="form-label">Label Text</label>
+    <textarea rows="8" id="labelText" class="form-control" onchange="preview()" oninput="preview()"></textarea>
+  </div>
+
+  {# Right column: preview + print + printer info #}
+  <div class="col-md-4">
+    <label class="form-label">Preview</label>
+    <div class="mb-2">
+      <img id="previewImg" class="img-fluid rounded border" style="max-height: 200px; width: auto;"/>
+    </div>
+    <p class="text-body-secondary small mb-3">
+      Printed size: <span id="labelWidth">?</span> cm &times; <span id="labelHeight">?</span> cm
+    </p>
+    <button id="printButton" type="button" class="btn btn-primary w-100 mb-3" onclick="print()">
+      <i class="bi bi-printer me-2"></i>Print
+    </button>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-printer me-2"></i>Printer</span>
+        <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-borderless mb-0 small">
+          <tbody id="printerInfoTable">
+            <tr><td class="text-body-secondary ps-3">Model</td><td id="pi-model">—</td></tr>
+            <tr><td class="text-body-secondary ps-3">Connection</td><td id="pi-printer" class="text-break font-monospace" style="font-size:0.75em"></td></tr>
+            <tr><td class="text-body-secondary ps-3">Default label</td><td id="pi-label">—</td></tr>
+            <tr id="pi-row-serial" style="display:none"><td class="text-body-secondary ps-3">Serial</td><td id="pi-serial" class="font-monospace" style="font-size:0.75em"></td></tr>
+            <tr id="pi-row-usb" style="display:none"><td class="text-body-secondary ps-3">USB</td><td id="pi-usb"></td></tr>
+            <tr id="pi-row-speed" style="display:none"><td class="text-body-secondary ps-3">Speed</td><td id="pi-speed"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="printResultPanel" class="card-footer py-2 small" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}
 
 {% block javascript %}
-var text = $('#labelText');
+var cachedImageData = null;
+
+document.getElementById('imageFile').addEventListener('change', function() {
+  var file = this.files[0];
+  if (!file) { clearImage(); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    cachedImageData = e.target.result.split(',')[1];
+    $('#imageOptions, #imageClearBtn').show();
+    preview();
+  };
+  reader.readAsDataURL(file);
+});
+
+function clearImage() {
+  cachedImageData = null;
+  document.getElementById('imageFile').value = '';
+  $('#imageOptions, #imageClearBtn').hide();
+  preview();
+}
 
 function formData() {
-  //var text = $('#labelText').val().replace(/\n/g, "%0A");
   var text = $('#labelText').val();
   if (text == '') text = ' ';
+  var borderOn = $('#borderEnabled').is(':checked');
   return {
-    text:        text,
-    font_family: $('#fontFamily option:selected').text(),
-    font_size:   $('#fontSize').val(),
-    label_size:  $('#labelSize option:selected').val(),
-    align:       $('input[name=fontAlign]:checked').val(),
-    orientation: $('input[name=orientation]:checked').val(),
+    text:          text,
+    font_family:   $('#fontFamily option:selected').text(),
+    font_size:     $('#fontSize').val(),
+    label_size:    $('#labelSize option:selected').val(),
+    align:         $('input[name=fontAlign]:checked').val(),
+    orientation:   $('input[name=orientation]:checked').val() || 'standard',
     margin_top:    $('#marginTop').val(),
     margin_bottom: $('#marginBottom').val(),
     margin_left:   $('#marginLeft').val(),
-    margin_right:  $('#marginRight').val()
-  }
+    margin_right:  $('#marginRight').val(),
+    border:        borderOn ? 'true' : 'false',
+    border_width:  borderOn ? $('#borderWidth').val() : 0,
+    image_data:    cachedImageData || '',
+    image_bw:      $('#imageBw').is(':checked') ? 'true' : 'false',
+    image_align:   $('input[name=imageAlign]:checked').val() || 'left',
+    image_gap:     $('#imageGap').val()
+  };
+}
+
+function onBorderToggle() {
+  var on = $('#borderEnabled').is(':checked');
+  $('#borderWidthRow').toggle(on);
+  preview();
 }
 
 function preview() {
-  if ($('input[name=orientation]:checked').val() == 'standard') {
-    $('.marginsTopBottom').prop('disabled', false).removeAttr('title');
-    $('.marginsLeftRight').prop('disabled', true).prop('title',  'Only relevant if rotated orientation is selected.');
-  } else {
-    $('.marginsTopBottom').prop('disabled', true).prop('title',  'Only relevant if standard orientation is selected.');
-    $('.marginsLeftRight').prop('disabled', false).removeAttr('title');
-  }
+  var isStandard = $('input[name=orientation]:checked').val() == 'standard';
+  $('.marginsTopBottom').prop('disabled', !isStandard);
+  $('.marginsLeftRight').prop('disabled', isStandard);
+
   $.ajax({
     type:        'POST',
     url:         '/api/preview/text?return_format=base64',
     contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
     data:        formData(),
-    success: function( data ) {
+    success: function(data) {
       $('#previewImg').attr('src', 'data:image/png;base64,' + data);
       var img = $('#previewImg')[0];
       img.onload = function() {
-        $('#labelWidth').html( (img.naturalWidth /300*2.54).toFixed(1));
-        $('#labelHeight').html((img.naturalHeight/300*2.54).toFixed(1));
+        $('#labelWidth').text((img.naturalWidth  / 300 * 2.54).toFixed(1));
+        $('#labelHeight').text((img.naturalHeight / 300 * 2.54).toFixed(1));
       };
     }
   });
 }
 
-function setStatus(data) {
-  if (data['success'])
-    $('#statusPanel').html('<div id="statusBox" class="alert alert-success" role="alert"><i class="glyphicon glyphicon-check"></i><span>Printing was successful.</span></div>');
-  else
-    $('#statusPanel').html('<div id="statusBox" class="alert alert-warning" role="alert"><i class="glyphicon glyphicon-alert"></i><span>Printing was unsuccessful:<br />'+data['message']+'</span></div>');
+function setPrintResult(data) {
+  var msg, cls, icon;
+  if (data['success']) {
+    cls  = 'text-success';
+    icon = 'bi-check-circle-fill';
+    msg  = 'Printed successfully.';
+  } else {
+    cls  = 'text-warning';
+    icon = 'bi-exclamation-triangle-fill';
+    msg  = 'Failed: ' + (data['error'] || data['message'] || 'unknown error');
+  }
+  var panel = $('#printResultPanel');
+  panel.html('<i class="bi ' + icon + ' me-1 ' + cls + '"></i><span>' + msg + '</span>').show();
   $('#printButton').prop('disabled', false);
 }
 
 function print() {
   $('#printButton').prop('disabled', true);
-  $('#statusPanel').html('<div id="statusBox" class="alert alert-info" role="alert"><i class="glyphicon glyphicon-hourglass"></i><span>Processing print request...</span></div>');
+  $('#printResultPanel').html('<div class="spinner-border spinner-border-sm me-2" role="status"></div><span class="text-body-secondary">Sending to printer...</span>').show();
   $.ajax({
     type:     'POST',
     dataType: 'json',
     data:     formData(),
     url:      '/api/print/text',
-    success:  setStatus,
-    error:    setStatus
+    success:  setPrintResult,
+    error:    function() { setPrintResult({success: false, error: 'Server error'}); }
   });
 }
 
-preview()
+function updatePrinterInfo() {
+  $.getJSON('/api/printer/info', function(d) {
+    $('#pi-model').text(d.model || '—');
+    $('#pi-printer').text(d.printer || '—');
+    $('#pi-label').text(d.label || '—');
 
+    var badge = $('#printerStatusBadge');
+    if (d.status === 'online') {
+      badge.text('Online').removeClass().addClass('badge text-bg-success');
+    } else if (d.status === 'offline') {
+      badge.text('Offline').removeClass().addClass('badge text-bg-danger');
+    } else {
+      badge.text(d.status || '—').removeClass().addClass('badge text-bg-secondary');
+    }
+
+    if (d.serial) {
+      $('#pi-serial').text(d.serial);
+      $('#pi-row-serial').show();
+    }
+    if (d.usb_bus !== undefined) {
+      $('#pi-usb').text('Bus ' + d.usb_bus + ', Address ' + d.usb_address);
+      $('#pi-row-usb').show();
+    }
+    if (d.usb_speed) {
+      $('#pi-speed').text(d.usb_speed);
+      $('#pi-row-speed').show();
+    }
+  });
+}
+
+updatePrinterInfo();
+setInterval(updatePrinterInfo, 5000);
+preview();
 {% endblock %}

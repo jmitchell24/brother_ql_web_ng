@@ -5,10 +5,11 @@
 This is a web service to print labels on Brother QL label printers.
 """
 
-import sys, logging, random, json, argparse
+import sys, logging, random, json, argparse, re, base64
 from io import BytesIO
 
-from bottle import run, route, get, post, response, request, jinja2_view as view, static_file, redirect
+from bottle import run, route, get, post, response, request, jinja2_view as view, static_file, redirect, BaseRequest
+BaseRequest.MEMFILE_MAX = 16 * 1024 * 1024  # 16 MB — needed for image uploads
 from PIL import Image, ImageDraw, ImageFont
 
 from brother_ql.devicedependent import models, label_type_specs, label_sizes
@@ -70,11 +71,25 @@ def get_label_context(request):
       'margin_bottom': float(d.get('margin_bottom', 45))/100.,
       'margin_left':   float(d.get('margin_left',   35))/100.,
       'margin_right':  float(d.get('margin_right',  35))/100.,
+      'border':        d.get('border', '') == 'true',
+      'border_width':  int(d.get('border_width', 3)),
+      'image_data':    d.get('image_data', '') or None,
+      'image_bw':      d.get('image_bw', 'true') == 'true',
+      'image_align':   d.get('image_align', 'left'),
+      'image_gap':     int(d.get('image_gap', 20)),
     }
     context['margin_top']    = int(context['font_size']*context['margin_top'])
     context['margin_bottom'] = int(context['font_size']*context['margin_bottom'])
     context['margin_left']   = int(context['font_size']*context['margin_left'])
     context['margin_right']  = int(context['font_size']*context['margin_right'])
+
+    # Border width is added to margins so text stays clear of the border
+    if context['border']:
+        bw = context['border_width']
+        context['margin_top']    += bw
+        context['margin_bottom'] += bw
+        context['margin_left']   += bw
+        context['margin_right']  += bw
 
     context['fill_color']  = (255, 0, 0) if 'red' in context['label_size'] else (0, 0, 0)
 
@@ -105,47 +120,150 @@ def get_label_context(request):
     return context
 
 def create_label_im(text, **kwargs):
-    label_type = kwargs['kind']
-    im_font = ImageFont.truetype(kwargs['font_path'], kwargs['font_size'])
-    im = Image.new('L', (20, 20), 'white')
-    draw = ImageDraw.Draw(im)
-    # workaround for a bug in multiline_textsize()
-    # when there are empty lines in the text:
-    lines = []
-    for line in text.split('\n'):
-        if line == '': line = ' '
-        lines.append(line)
-    text = '\n'.join(lines)
-    bbox = im_font.getbbox('A')
-    linesize = (bbox[2] - bbox[0], bbox[3] - bbox[1])
-    multiline_bbox = draw.multiline_textbbox((0, 0), text, font=im_font)
-    textsize = (multiline_bbox[2] - multiline_bbox[0], multiline_bbox[3] - multiline_bbox[1])
+    label_type  = kwargs['kind']
+    im_font     = ImageFont.truetype(kwargs['font_path'], kwargs['font_size'])
+    fill_color  = kwargs['fill_color']
+    orientation = kwargs['orientation']
+
+    # Normalise empty lines in text
+    text = '\n'.join(line if line else ' ' for line in text.split('\n'))
+
+    # Measure text on a scratch canvas
+    tmp  = Image.new('L', (20, 20), 'white')
+    draw = ImageDraw.Draw(tmp)
+    tb   = draw.multiline_textbbox((0, 0), text, font=im_font)
+    textsize = (tb[2] - tb[0], tb[3] - tb[1])
+
     width, height = kwargs['width'], kwargs['height']
-    if kwargs['orientation'] == 'standard':
+    gap = kwargs['image_gap']
+
+    # --- Load and process image ---
+    label_img = None
+    img_w = img_h = 0
+    if kwargs.get('image_data'):
+        raw = base64.b64decode(kwargs['image_data'])
+        pil = Image.open(BytesIO(raw))
+        # Flatten onto white background
+        flat = Image.new('RGB', pil.size, 'white')
+        if pil.mode == 'RGBA':
+            flat.paste(pil, mask=pil.split()[3])
+        else:
+            flat.paste(pil.convert('RGB'))
+        if kwargs['image_bw']:
+            flat = flat.convert('L').convert('RGB')
+        label_img = flat
+
+    # --- Determine label canvas size ---
+    if orientation == 'standard':
         if label_type in (ENDLESS_LABEL,):
             height = textsize[1] + kwargs['margin_top'] + kwargs['margin_bottom']
-    elif kwargs['orientation'] == 'rotated':
+    elif orientation == 'rotated':
         if label_type in (ENDLESS_LABEL,):
             width = textsize[0] + kwargs['margin_left'] + kwargs['margin_right']
-    im = Image.new('RGB', (width, height), 'white')
+
+    # --- Scale image to content height ---
+    if label_img:
+        content_h = height - kwargs['margin_top'] - kwargs['margin_bottom']
+        content_h = max(content_h, 1)
+        scale = content_h / label_img.height
+        img_w = max(1, int(label_img.width * scale))
+        img_h = content_h
+        label_img = label_img.resize((img_w, img_h), Image.LANCZOS)
+
+    # --- Create final canvas ---
+    im   = Image.new('RGB', (width, height), 'white')
     draw = ImageDraw.Draw(im)
-    if kwargs['orientation'] == 'standard':
+
+    # --- Layout ---
+    if orientation == 'standard':
+        img_y = kwargs['margin_top']
+
+        if label_img:
+            img_align = kwargs['image_align']
+            if img_align == 'left':
+                img_x    = kwargs['margin_left']
+                text_x   = img_x + img_w + gap
+                text_area_w = width - text_x - kwargs['margin_right']
+            else:
+                img_x    = width - kwargs['margin_right'] - img_w
+                text_x   = kwargs['margin_left']
+                text_area_w = img_x - gap - text_x
+
+            text_area_w = max(text_area_w, 0)
+            im.paste(label_img, (img_x, img_y))
+
+            if kwargs['align'] == 'center':
+                horizontal_offset = text_x + max((text_area_w - textsize[0]) // 2, 0)
+            elif kwargs['align'] == 'right':
+                horizontal_offset = text_x + max(text_area_w - textsize[0], 0)
+            else:
+                horizontal_offset = text_x
+        else:
+            horizontal_offset = max((width - textsize[0]) // 2, 0)
+
         if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
-            vertical_offset  = (height - textsize[1])//2
-            vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom'])//2
+            vertical_offset  = (height - textsize[1]) // 2
+            vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom']) // 2
         else:
             vertical_offset = kwargs['margin_top']
-        horizontal_offset = max((width - textsize[0])//2, 0)
-    elif kwargs['orientation'] == 'rotated':
-        vertical_offset  = (height - textsize[1])//2
-        vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom'])//2
+
+    elif orientation == 'rotated':
+        vertical_offset  = (height - textsize[1]) // 2
+        vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom']) // 2
         if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
-            horizontal_offset = max((width - textsize[0])//2, 0)
+            horizontal_offset = max((width - textsize[0]) // 2, 0)
         else:
             horizontal_offset = kwargs['margin_left']
-    offset = horizontal_offset, vertical_offset
-    draw.multiline_text(offset, text, kwargs['fill_color'], font=im_font, align=kwargs['align'])
+        if label_img:
+            im.paste(label_img, (kwargs['margin_left'], kwargs['margin_top']))
+
+    draw.multiline_text((horizontal_offset, vertical_offset), text, fill_color, font=im_font, align=kwargs['align'])
+
+    if kwargs.get('border'):
+        bw = kwargs['border_width']
+        draw.rectangle([(bw//2, bw//2), (width - bw//2 - 1, height - bw//2 - 1)],
+                       outline=fill_color, width=bw)
     return im
+
+USB_SPEEDS = {1: 'Low Speed (1.5 Mbit/s)', 2: 'Full Speed (12 Mbit/s)', 3: 'High Speed (480 Mbit/s)'}
+
+@get('/api/printer/info')
+def printer_info():
+    response.content_type = 'application/json'
+    info = {
+        'model':   CONFIG['PRINTER']['MODEL'],
+        'printer': CONFIG['PRINTER']['PRINTER'],
+        'label':   CONFIG['LABEL']['DEFAULT_SIZE'],
+    }
+    try:
+        selected_backend = guess_backend(CONFIG['PRINTER']['PRINTER'])
+        if selected_backend == 'pyusb':
+            import usb.core
+            m = re.match(r'usb://(\w+):(\w+)', CONFIG['PRINTER']['PRINTER'])
+            if m:
+                dev = usb.core.find(idVendor=int(m.group(1), 16), idProduct=int(m.group(2), 16))
+                if dev:
+                    info['status']       = 'online'
+                    info['manufacturer'] = dev.manufacturer
+                    info['product']      = dev.product
+                    info['serial']       = dev.serial_number
+                    info['usb_bus']      = dev.bus
+                    info['usb_address']  = dev.address
+                    info['usb_speed']    = USB_SPEEDS.get(dev.speed, 'Unknown')
+                else:
+                    info['status'] = 'offline'
+            else:
+                info['status'] = 'unknown'
+        elif selected_backend == 'linux_kernel':
+            import os
+            path = CONFIG['PRINTER']['PRINTER'].replace('file://', '')
+            info['status'] = 'online' if os.path.exists(path) else 'offline'
+        else:
+            info['status'] = 'unknown'
+    except Exception as e:
+        info['status'] = 'error'
+        info['error']  = str(e)
+    return json.dumps(info)
 
 @get('/api/preview/text')
 @post('/api/preview/text')
