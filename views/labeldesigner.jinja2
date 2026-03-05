@@ -217,7 +217,12 @@
       <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between">
           <span><i class="bi bi-printer me-2"></i>Printer</span>
-          <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary p-0 px-1 lh-1" title="Refresh" onclick="updatePrinterInfo()">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
+          </div>
         </div>
         <div class="card-body p-0">
           <table class="table table-sm table-borderless mb-0 small">
