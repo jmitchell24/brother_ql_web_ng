@@ -386,6 +386,26 @@ function configPayload() {
 
 var savedConfigNames = [];
 
+function formatSavedAt(s) {
+  if (!s) return '';
+  // Handle legacy "2026-03-05 06:35 UTC" and ISO "2026-03-05T06:35:12+00:00"
+  var d = new Date(s.replace(' UTC', 'Z').replace(/(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/, '$1T$2'));
+  if (isNaN(d)) return s;
+  var now = new Date();
+  var diff = now - d;
+  var mins  = Math.floor(diff / 60000);
+  var hours = Math.floor(diff / 3600000);
+  var days  = Math.floor(diff / 86400000);
+  if (diff < 60000)  return 'just now';
+  if (mins  < 60)    return mins + ' min ago';
+  if (hours < 24)    return hours + ' hr ago';
+  if (days  === 1)   return 'yesterday';
+  if (days  < 7)     return days + ' days ago';
+  var opts = { month: 'short', day: 'numeric' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString(undefined, opts);
+}
+
 function refreshConfigList() {
   $.getJSON('/api/configs', function(list) {
     savedConfigNames = list.map(function(c) { return c.name; });
@@ -416,7 +436,7 @@ function refreshConfigList() {
         .on('click', function() { deleteConfig(cfg.name, $item); })
         .appendTo($btns);
       if (cfg.saved_at) {
-        $('<div class="text-body-secondary" style="font-size:0.72em">').text(cfg.saved_at).appendTo($item);
+        $('<div class="text-body-secondary" style="font-size:0.72em">').text(formatSavedAt(cfg.saved_at)).appendTo($item);
       }
       $list.append($item);
     });

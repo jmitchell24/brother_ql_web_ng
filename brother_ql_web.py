@@ -368,9 +368,9 @@ def save_config(name):
     data = request.json
     if not isinstance(data, dict):
         abort(400, 'Expected JSON object')
-    from datetime import datetime
+    from datetime import datetime, timezone
     configs = _load_saved_configs()
-    data['saved_at'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    data['saved_at'] = datetime.now(timezone.utc).isoformat()
     configs[name] = data
     _save_configs(configs)
     return json.dumps({'success': True})
