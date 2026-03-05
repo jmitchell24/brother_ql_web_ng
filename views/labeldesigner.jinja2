@@ -206,7 +206,7 @@
         <div class="card-body pb-2">
           <input id="configName" class="form-control form-control-sm mb-2" type="text" placeholder="Config name…" maxlength="80">
           <button class="btn btn-sm btn-primary w-100 mb-3" type="button" onclick="saveConfig()">
-            <i class="bi bi-floppy me-1"></i>Save current
+            <i class="bi bi-plus-circle me-1"></i>Create new
           </button>
           <div id="configList" class="list-group list-group-flush" style="max-height: 40vh; overflow-y: auto;">
             <div class="list-group-item text-body-secondary small px-0">Loading…</div>
@@ -420,6 +420,10 @@ function refreshConfigList() {
       $('<span class="text-body-secondary flex-shrink-0" style="cursor:grab;line-height:1">').html('<i class="bi bi-grip-vertical"></i>').appendTo($top);
       $('<span class="flex-grow-1 fw-medium text-truncate" style="min-width:0">').text(cfg.name).appendTo($top);
       var $btns = $('<div class="d-flex gap-1 flex-shrink-0">').appendTo($top);
+      $('<button class="btn btn-sm btn-outline-primary" title="Save current settings to this config">')
+        .html('<i class="bi bi-floppy"></i>')
+        .on('click', function() { overwriteConfig(cfg.name); })
+        .appendTo($btns);
       $('<button class="btn btn-sm btn-outline-secondary" title="Load">')
         .html('<i class="bi bi-upload"></i>')
         .on('click', function() { loadConfig(cfg.name); })
@@ -473,6 +477,18 @@ function saveConfig() {
   if (savedConfigNames.indexOf(name) !== -1) {
     if (!confirm('A config named "' + name + '" already exists. Replace it?')) return;
   }
+  $.ajax({
+    type: 'POST',
+    url: '/api/configs/' + encodeURIComponent(name),
+    contentType: 'application/json',
+    data: JSON.stringify(configPayload()),
+    success: function() { refreshConfigList(); },
+    error: function() { alert('Failed to save config.'); }
+  });
+}
+
+function overwriteConfig(name) {
+  if (!confirm('Overwrite "' + name + '" with current settings?')) return;
   $.ajax({
     type: 'POST',
     url: '/api/configs/' + encodeURIComponent(name),
