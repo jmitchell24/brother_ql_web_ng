@@ -415,8 +415,9 @@ function refreshConfigList() {
       return;
     }
     list.forEach(function(cfg) {
-      var $item = $('<div class="list-group-item px-0 py-2">');
+      var $item = $('<div class="list-group-item px-0 py-2" draggable="true">').attr('data-cfg-name', cfg.name);
       var $top = $('<div class="d-flex align-items-center gap-1 mb-1">').appendTo($item);
+      $('<span class="text-body-secondary flex-shrink-0" style="cursor:grab;line-height:1">').html('<i class="bi bi-grip-vertical"></i>').appendTo($top);
       $('<span class="flex-grow-1 fw-medium text-truncate" style="min-width:0">').text(cfg.name).appendTo($top);
       var $btns = $('<div class="d-flex gap-1 flex-shrink-0">').appendTo($top);
       $('<button class="btn btn-sm btn-outline-secondary" title="Load">')
@@ -439,6 +440,29 @@ function refreshConfigList() {
         $('<div class="text-body-secondary" style="font-size:0.72em">').text(formatSavedAt(cfg.saved_at)).appendTo($item);
       }
       $list.append($item);
+    });
+
+    // Drag-and-drop sort
+    var dragSrc = null;
+    $list.children('[draggable]').on('dragstart', function(e) {
+      dragSrc = this;
+      e.originalEvent.dataTransfer.effectAllowed = 'move';
+      $(this).addClass('opacity-50');
+    }).on('dragend', function() {
+      $(this).removeClass('opacity-50');
+      $list.children('[draggable]').removeClass('border-top border-primary');
+    }).on('dragover', function(e) {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === this) return;
+      var items = $list.children('[draggable]').toArray();
+      var fi = items.indexOf(dragSrc), ti = items.indexOf(this);
+      if (fi < ti) $(this).after(dragSrc); else $(this).before(dragSrc);
+    }).on('drop', function(e) {
+      e.preventDefault();
+      var order = $list.children('[draggable]').map(function() {
+        return $(this).data('cfg-name');
+      }).toArray();
+      $.ajax({ type: 'PUT', url: '/api/configs/order', contentType: 'application/json', data: JSON.stringify(order) });
     });
   });
 }

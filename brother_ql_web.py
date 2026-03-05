@@ -8,7 +8,7 @@ This is a web service to print labels on Brother QL label printers.
 import sys, logging, random, json, argparse, re, base64, os
 from io import BytesIO
 
-from bottle import run, route, get, post, delete, response, request, jinja2_view as view, static_file, redirect, BaseRequest, abort
+from bottle import run, route, get, post, put, delete, response, request, jinja2_view as view, static_file, redirect, BaseRequest, abort
 BaseRequest.MEMFILE_MAX = 16 * 1024 * 1024  # 16 MB — needed for image uploads
 from PIL import Image, ImageDraw, ImageFont
 
@@ -354,11 +354,18 @@ def _save_configs(configs):
     with open(SAVED_CONFIGS_FILE, 'w', encoding='utf-8') as fh:
         json.dump(configs, fh, ensure_ascii=False, indent=2)
 
+def _ordered_names(configs):
+    order = configs.get('__order__', [])
+    ordered = [n for n in order if n in configs and n != '__order__']
+    extras  = [n for n in configs if n != '__order__' and n not in set(ordered)]
+    return ordered + extras
+
 @get('/api/configs')
 def list_configs():
     response.content_type = 'application/json'
     configs = _load_saved_configs()
-    return json.dumps([{'name': name, 'saved_at': v.get('saved_at', '')} for name, v in sorted(configs.items())])
+    names = _ordered_names(configs)
+    return json.dumps([{'name': n, 'saved_at': configs[n].get('saved_at', '')} for n in names])
 
 @post('/api/configs/<name>')
 def save_config(name):
@@ -371,6 +378,10 @@ def save_config(name):
     from datetime import datetime, timezone
     configs = _load_saved_configs()
     data['saved_at'] = datetime.now(timezone.utc).isoformat()
+    if name not in configs:
+        order = _ordered_names(configs)
+        order.append(name)
+        configs['__order__'] = order
     configs[name] = data
     _save_configs(configs)
     return json.dumps({'success': True})
@@ -379,7 +390,7 @@ def save_config(name):
 def load_config(name):
     response.content_type = 'application/json'
     configs = _load_saved_configs()
-    if name not in configs:
+    if name not in configs or name == '__order__':
         abort(404, 'Config not found')
     return json.dumps(configs[name])
 
@@ -387,16 +398,28 @@ def load_config(name):
 def delete_config(name):
     response.content_type = 'application/json'
     configs = _load_saved_configs()
-    if name not in configs:
+    if name not in configs or name == '__order__':
         abort(404, 'Config not found')
     del configs[name]
+    configs['__order__'] = [n for n in configs.get('__order__', []) if n != name]
     _save_configs(configs)
     return json.dumps({'success': True})
 
 @delete('/api/configs')
 def delete_all_configs():
     response.content_type = 'application/json'
-    _save_configs({})
+    _save_configs({'__order__': []})
+    return json.dumps({'success': True})
+
+@put('/api/configs/order')
+def set_config_order():
+    response.content_type = 'application/json'
+    order = request.json
+    if not isinstance(order, list):
+        abort(400, 'Expected array')
+    configs = _load_saved_configs()
+    configs['__order__'] = [n for n in order if n in configs and n != '__order__']
+    _save_configs(configs)
     return json.dumps({'success': True})
 
 def main():
