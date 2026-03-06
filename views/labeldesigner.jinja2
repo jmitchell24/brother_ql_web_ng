@@ -3,243 +3,203 @@
 {% block content %}
 <div class="row g-4">
 
-  {# Main area: label designer #}
-  <div class="col-lg-8">
-  <div class="row g-4">
-
-  {# Left column: settings #}
-  <div class="col-md-4">
-    <div class="accordion" id="accordion">
-
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="false">
-            <i class="bi bi-file-earmark me-2"></i> Label Size
-          </button>
-        </h2>
-        <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#accordion">
-          <div class="accordion-body">
-            <label for="labelSize" class="form-label">Size</label>
-            <select class="form-select" id="labelSize" onchange="preview()">
-              {% for label_size in label_sizes %}
-                <option value="{{ label_size[0] }}" {% if label['DEFAULT_SIZE'] == label_size[0] %}selected{% endif %}>{{ label_size[1] }}</option>
-              {% endfor %}
-            </select>
-            <label class="form-label mt-3">Orientation</label>
-            <div class="d-flex gap-3">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientStandard" value="standard" {% if label['DEFAULT_ORIENTATION'] != 'rotated' %}checked{% endif %}>
-                <label class="form-check-label" for="orientStandard">Standard</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientRotated" value="rotated" {% if label['DEFAULT_ORIENTATION'] == 'rotated' %}checked{% endif %}>
-                <label class="form-check-label" for="orientRotated">Rotated</label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2" aria-expanded="true">
-            <i class="bi bi-type me-2"></i> Font Settings
-          </button>
-        </h2>
-        <div id="collapse2" class="accordion-collapse collapse show" data-bs-parent="#accordion">
-          <div class="accordion-body">
-            <label for="fontFamily" class="form-label">Font Family</label>
-            <select class="form-select" id="fontFamily" onchange="preview()">
-              {% for font_family_name in font_family_names %}
-                {% for font_style in fonts[font_family_name].keys() %}
-                  <option {% if label['DEFAULT_FONTS']['style'] == font_style and label['DEFAULT_FONTS']['family'] == font_family_name %}selected{% endif %}>{{ font_family_name }} ({{ font_style }})</option>
-                {% endfor %}
-              {% endfor %}
-            </select>
-            <label for="fontSize" class="form-label mt-3">Font Size</label>
-            <input id="fontSize" class="form-control" type="number" min="1" value="{{ label['DEFAULT_FONT_SIZE'] }}" onchange="preview()" required>
-            <label class="form-label mt-3">Alignment</label>
-            <div class="btn-group d-flex" role="group">
-              <input type="radio" class="btn-check" name="fontAlign" id="alignLeft" value="left" onchange="preview()">
-              <label class="btn btn-outline-secondary w-100" for="alignLeft"><i class="bi bi-text-left"></i></label>
-              <input type="radio" class="btn-check" name="fontAlign" id="alignCenter" value="center" onchange="preview()" checked>
-              <label class="btn btn-outline-secondary w-100" for="alignCenter"><i class="bi bi-text-center"></i></label>
-              <input type="radio" class="btn-check" name="fontAlign" id="alignRight" value="right" onchange="preview()">
-              <label class="btn btn-outline-secondary w-100" for="alignRight"><i class="bi bi-text-right"></i></label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseImg" aria-expanded="false">
-            <i class="bi bi-image me-2"></i> Image
-          </button>
-        </h2>
-        <div id="collapseImg" class="accordion-collapse collapse" data-bs-parent="#accordion">
-          <div class="accordion-body">
-            <label for="imageFile" class="form-label">Image file</label>
-            <input class="form-control" type="file" id="imageFile" accept="image/*">
-            <div class="form-text">Max 16 MB. PNG, JPG, GIF, WebP, etc.</div>
-            <button class="btn btn-sm btn-outline-secondary mt-2" type="button" id="imageClearBtn" style="display:none" onclick="clearImage()">
-              <i class="bi bi-x me-1"></i>Clear image
-            </button>
-            <div id="imageOptions" style="display:none">
-              <div class="form-check mt-3">
-                <input class="form-check-input" type="checkbox" id="imageBw" checked onchange="preview()">
-                <label class="form-check-label" for="imageBw">Convert to B&amp;W</label>
-              </div>
-              <label class="form-label mt-3">Image position</label>
-              <div class="d-flex gap-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
-                  <label class="form-check-label" for="imageAlignLeft">Left of text</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
-                  <label class="form-check-label" for="imageAlignRight">Right of text</label>
-                </div>
-              </div>
-              <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
-              <div class="input-group">
-                <input id="imageGap" class="form-control" type="number" min="0" max="200" value="20" onchange="preview()">
-                <span class="input-group-text">px</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false">
-            <i class="bi bi-gear me-2"></i> Detailed Settings
-          </button>
-        </h2>
-        <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#accordion">
-          <div class="accordion-body">
-            <div class="row g-2">
-              <div class="col-6">
-                <label for="marginTop" class="form-label">Margin Top</label>
-                <div class="input-group marginsTopBottom">
-                  <input id="marginTop" class="form-control" type="number" min="0" max="200" value="24" onchange="preview()" required>
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-              <div class="col-6">
-                <label for="marginBottom" class="form-label">Margin Bottom</label>
-                <div class="input-group marginsTopBottom">
-                  <input id="marginBottom" class="form-control" type="number" min="0" max="200" value="45" onchange="preview()" required>
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-              <div class="col-6">
-                <label for="marginLeft" class="form-label">Margin Left</label>
-                <div class="input-group marginsLeftRight">
-                  <input id="marginLeft" class="form-control" type="number" min="0" max="200" value="35" onchange="preview()" required>
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-              <div class="col-6">
-                <label for="marginRight" class="form-label">Margin Right</label>
-                <div class="input-group marginsLeftRight">
-                  <input id="marginRight" class="form-control" type="number" min="0" max="200" value="35" onchange="preview()" required>
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-              <div class="col-12 mt-2">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="borderEnabled" onchange="onBorderToggle()">
-                  <label class="form-check-label" for="borderEnabled">Add border</label>
-                </div>
-              </div>
-              <div class="col-12" id="borderWidthRow" style="display:none">
-                <label for="borderWidth" class="form-label">Border width</label>
-                <div class="input-group">
-                  <input id="borderWidth" class="form-control" type="number" min="1" max="20" value="3" onchange="preview()" required>
-                  <span class="input-group-text">px</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  {# Middle column: text input #}
-  <div class="col-md-4">
+  {# Left column: text input, preview + print #}
+  <div class="col-md-6">
     <label for="labelText" class="form-label">Label Text</label>
-    <textarea rows="8" id="labelText" class="form-control" onchange="preview()" oninput="preview()"></textarea>
-  </div>
-
-  {# Right column: preview + print #}
-  <div class="col-md-4">
-    <label class="form-label">Preview</label>
+    <textarea rows="4" id="labelText" class="form-control mb-3" onchange="preview()" oninput="preview()"></textarea>
     <div class="mb-2">
       <img id="previewImg" class="img-fluid rounded border" style="max-height: 200px; width: auto;"/>
     </div>
     <p class="text-body-secondary small mb-3">
       Printed size: <span id="labelWidth">?</span> cm &times; <span id="labelHeight">?</span> cm
     </p>
-    <button id="printButton" type="button" class="btn btn-primary w-100 mb-2" onclick="print()">
+    <button id="printButton" type="button" class="btn btn-primary mb-2" onclick="print()">
       <i class="bi bi-printer me-2"></i>Print
     </button>
     <div id="printResultPanel" class="small py-1" style="display:none"></div>
   </div>
-  </div>{# end inner row #}
-  </div>{# end col-lg-8 #}
 
-  {# Sidebar: saved configs + printer info #}
-  <div class="col-lg-4">
-    <div class="sticky-top" style="top: 1rem">
+  {# Right column: settings #}
+  <div class="col-md-6">
+    <ul class="nav nav-tabs mb-3" id="settingsTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-label-tab" data-bs-toggle="tab" data-bs-target="#tab-label" type="button" role="tab" title="Label Size"><i class="bi bi-file-earmark"></i></button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-font-tab" data-bs-toggle="tab" data-bs-target="#tab-font" type="button" role="tab" title="Font Settings"><i class="bi bi-type"></i></button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-image-tab" data-bs-toggle="tab" data-bs-target="#tab-image" type="button" role="tab" title="Image"><i class="bi bi-image"></i></button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab" title="Detailed Settings"><i class="bi bi-gear"></i></button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-configs-tab" data-bs-toggle="tab" data-bs-target="#tab-configs" type="button" role="tab" title="Saved Configs"><i class="bi bi-bookmark"></i></button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-printer-tab" data-bs-toggle="tab" data-bs-target="#tab-printer" type="button" role="tab" title="Printer"><i class="bi bi-printer"></i></button>
+      </li>
+    </ul>
+    <div class="tab-content" id="settingsTabContent">
 
-      <div class="card mb-3">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-bookmark me-2"></i>Saved Configs</span>
-          <button class="btn btn-sm btn-outline-danger py-0" title="Delete all" onclick="deleteAllConfigs()">
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
-        <div class="card-body pb-2">
-          <input id="configName" class="form-control form-control-sm mb-2" type="text" placeholder="Config name…" maxlength="80">
-          <button class="btn btn-sm btn-primary w-100 mb-3" type="button" onclick="saveConfig()">
-            <i class="bi bi-plus-circle me-1"></i>Create new
-          </button>
-          <div id="configList" class="list-group list-group-flush" style="max-height: 40vh; overflow-y: auto;">
-            <div class="list-group-item text-body-secondary small px-0">Loading…</div>
+      <div class="tab-pane fade" id="tab-label" role="tabpanel">
+        <label for="labelSize" class="form-label">Size</label>
+        <select class="form-select" id="labelSize" onchange="preview()">
+          {% for label_size in label_sizes %}
+            <option value="{{ label_size[0] }}" {% if label['DEFAULT_SIZE'] == label_size[0] %}selected{% endif %}>{{ label_size[1] }}</option>
+          {% endfor %}
+        </select>
+        <label class="form-label mt-3">Orientation</label>
+        <div class="d-flex gap-3">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientStandard" value="standard" {% if label['DEFAULT_ORIENTATION'] != 'rotated' %}checked{% endif %}>
+            <label class="form-check-label" for="orientStandard">Standard</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientRotated" value="rotated" {% if label['DEFAULT_ORIENTATION'] == 'rotated' %}checked{% endif %}>
+            <label class="form-check-label" for="orientRotated">Rotated</label>
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-printer me-2"></i>Printer</span>
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary p-0 px-1 lh-1" title="Refresh" onclick="updatePrinterInfo()">
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
-            <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
+      <div class="tab-pane fade show active" id="tab-font" role="tabpanel">
+        <label for="fontFamily" class="form-label">Font Family</label>
+        <select class="form-select" id="fontFamily" onchange="preview()">
+          {% for font_family_name in font_family_names %}
+            {% for font_style in fonts[font_family_name].keys() %}
+              <option {% if label['DEFAULT_FONTS']['style'] == font_style and label['DEFAULT_FONTS']['family'] == font_family_name %}selected{% endif %}>{{ font_family_name }} ({{ font_style }})</option>
+            {% endfor %}
+          {% endfor %}
+        </select>
+        <label for="fontSize" class="form-label mt-3">Font Size</label>
+        <input id="fontSize" class="form-control" type="number" min="1" value="{{ label['DEFAULT_FONT_SIZE'] }}" onchange="preview()" required>
+        <label class="form-label mt-3">Alignment</label>
+        <div class="btn-group d-flex" role="group">
+          <input type="radio" class="btn-check" name="fontAlign" id="alignLeft" value="left" onchange="preview()">
+          <label class="btn btn-outline-secondary w-100" for="alignLeft"><i class="bi bi-text-left"></i></label>
+          <input type="radio" class="btn-check" name="fontAlign" id="alignCenter" value="center" onchange="preview()" checked>
+          <label class="btn btn-outline-secondary w-100" for="alignCenter"><i class="bi bi-text-center"></i></label>
+          <input type="radio" class="btn-check" name="fontAlign" id="alignRight" value="right" onchange="preview()">
+          <label class="btn btn-outline-secondary w-100" for="alignRight"><i class="bi bi-text-right"></i></label>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-image" role="tabpanel">
+        <label for="imageFile" class="form-label">Image file</label>
+        <input class="form-control" type="file" id="imageFile" accept="image/*">
+        <div class="form-text">Max 16 MB. PNG, JPG, GIF, WebP, etc.</div>
+        <button class="btn btn-sm btn-outline-secondary mt-2" type="button" id="imageClearBtn" style="display:none" onclick="clearImage()">
+          <i class="bi bi-x me-1"></i>Clear image
+        </button>
+        <div id="imageOptions" style="display:none">
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="imageBw" checked onchange="preview()">
+            <label class="form-check-label" for="imageBw">Convert to B&amp;W</label>
+          </div>
+          <label class="form-label mt-3">Image position</label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
+              <label class="form-check-label" for="imageAlignLeft">Left of text</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
+              <label class="form-check-label" for="imageAlignRight">Right of text</label>
+            </div>
+          </div>
+          <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
+          <div class="input-group">
+            <input id="imageGap" class="form-control" type="number" min="0" max="200" value="20" onchange="preview()">
+            <span class="input-group-text">px</span>
           </div>
         </div>
-        <div class="card-body p-0">
-          <table class="table table-sm table-borderless mb-0 small">
-            <tbody id="printerInfoTable">
-              <tr><td class="text-body-secondary ps-3">Model</td><td id="pi-model">—</td></tr>
-              <tr><td class="text-body-secondary ps-3">Connection</td><td id="pi-printer" class="text-break font-monospace" style="font-size:0.75em"></td></tr>
-              <tr><td class="text-body-secondary ps-3">Default label</td><td id="pi-label">—</td></tr>
-              <tr id="pi-row-serial" style="display:none"><td class="text-body-secondary ps-3">Serial</td><td id="pi-serial" class="font-monospace" style="font-size:0.75em"></td></tr>
-              <tr id="pi-row-usb" style="display:none"><td class="text-body-secondary ps-3">USB</td><td id="pi-usb"></td></tr>
-              <tr id="pi-row-speed" style="display:none"><td class="text-body-secondary ps-3">Speed</td><td id="pi-speed"></td></tr>
-            </tbody>
-          </table>
+      </div>
+
+      <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+        <div class="row g-2">
+          <div class="col-6">
+            <label for="marginTop" class="form-label">Margin Top</label>
+            <div class="input-group marginsTopBottom">
+              <input id="marginTop" class="form-control" type="number" min="0" max="200" value="24" onchange="preview()" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label for="marginBottom" class="form-label">Margin Bottom</label>
+            <div class="input-group marginsTopBottom">
+              <input id="marginBottom" class="form-control" type="number" min="0" max="200" value="45" onchange="preview()" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label for="marginLeft" class="form-label">Margin Left</label>
+            <div class="input-group marginsLeftRight">
+              <input id="marginLeft" class="form-control" type="number" min="0" max="200" value="35" onchange="preview()" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label for="marginRight" class="form-label">Margin Right</label>
+            <div class="input-group marginsLeftRight">
+              <input id="marginRight" class="form-control" type="number" min="0" max="200" value="35" onchange="preview()" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <div class="col-12 mt-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="borderEnabled" onchange="onBorderToggle()">
+              <label class="form-check-label" for="borderEnabled">Add border</label>
+            </div>
+          </div>
+          <div class="col-12" id="borderWidthRow" style="display:none">
+            <label for="borderWidth" class="form-label">Border width</label>
+            <div class="input-group">
+              <input id="borderWidth" class="form-control" type="number" min="1" max="20" value="3" onchange="preview()" required>
+              <span class="input-group-text">px</span>
+            </div>
+          </div>
         </div>
+      </div>
+
+
+      <div class="tab-pane fade" id="tab-configs" role="tabpanel">
+        <div class="d-flex gap-2 mb-2">
+          <input id="configName" class="form-control form-control-sm" type="text" placeholder="Config name…" maxlength="80">
+          <button class="btn btn-sm btn-outline-danger flex-shrink-0" title="Delete all" onclick="deleteAllConfigs()">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <button class="btn btn-sm btn-primary w-100 mb-3" type="button" onclick="saveConfig()">
+          <i class="bi bi-plus-circle me-1"></i>Create new
+        </button>
+        <div id="configList" class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;">
+          <div class="list-group-item text-body-secondary small px-0">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-printer" role="tabpanel">
+        <div class="mb-2">
+          <span id="printerStatusBadge" class="badge text-bg-secondary">—</span>
+        </div>
+        <table class="table table-sm table-borderless mb-3 small">
+          <tbody id="printerInfoTable">
+            <tr><td class="text-body-secondary">Model</td><td id="pi-model">—</td></tr>
+            <tr><td class="text-body-secondary">Connection</td><td id="pi-printer" class="text-break font-monospace" style="font-size:0.75em"></td></tr>
+            <tr><td class="text-body-secondary">Default label</td><td id="pi-label">—</td></tr>
+            <tr id="pi-row-serial" style="display:none"><td class="text-body-secondary">Serial</td><td id="pi-serial" class="font-monospace" style="font-size:0.75em"></td></tr>
+            <tr id="pi-row-usb" style="display:none"><td class="text-body-secondary">USB</td><td id="pi-usb"></td></tr>
+            <tr id="pi-row-speed" style="display:none"><td class="text-body-secondary">Speed</td><td id="pi-speed"></td></tr>
+          </tbody>
+        </table>
+        <button class="btn btn-outline-secondary w-100" onclick="updatePrinterInfo()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
       </div>
 
     </div>
   </div>
+
 
 </div>
 
