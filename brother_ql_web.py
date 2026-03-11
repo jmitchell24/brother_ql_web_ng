@@ -6,6 +6,7 @@ This is a web service to print labels on Brother QL label printers.
 """
 
 import sys, logging, random, json, argparse, re, base64, os, subprocess
+from datetime import datetime
 from io import BytesIO
 
 from bottle import run, route, get, post, put, delete, response, request, jinja2_view as view, static_file, redirect, BaseRequest, abort
@@ -127,12 +128,52 @@ def get_label_context(request):
 
     return context
 
+# ---------------------------------------------------------------------------
+# Label text templating
+#
+# Tokens use {{ name }} syntax.  To add a new token:
+#   1. Add an entry to LABEL_TEMPLATE_TOKENS below.
+#   2. The value can be a plain string or a zero-argument callable that
+#      returns a string (called fresh on each render so values like dates
+#      are always current).
+#
+# ---------------------------------------------------------------------------
+
+LABEL_TEMPLATE_TOKENS = {
+    # Current date — "Mar 11, 2026"
+    'date':     lambda: datetime.now().strftime('%b %-d, %Y'),
+    # Current time — "3:45 PM"
+    'time':     lambda: datetime.now().strftime('%-I:%M %p'),
+    # Date and time — "Mar 11, 2026 3:45 PM"
+    'datetime': lambda: datetime.now().strftime('%b %-d, %Y %-I:%M %p'),
+    # Day of the week — "Tuesday"
+    'day':      lambda: datetime.now().strftime('%A'),
+    # Full month name — "March"
+    'month':    lambda: datetime.now().strftime('%B'),
+    # Four-digit year — "2026"
+    'year':     lambda: datetime.now().strftime('%Y'),
+}
+
+_TOKEN_RE = re.compile(r'\{\{\s*(\w+)\s*\}\}')
+
+def apply_label_templates(text):
+    """Replace {{ token }} placeholders in label text with their resolved values.
+    Unknown tokens are left as-is so typos don't silently vanish."""
+    def replace(match):
+        token = match.group(1)
+        if token in LABEL_TEMPLATE_TOKENS:
+            val = LABEL_TEMPLATE_TOKENS[token]
+            return val() if callable(val) else val
+        return match.group(0)  # unknown token — leave unchanged
+    return _TOKEN_RE.sub(replace, text)
+
 def create_label_im(text, **kwargs):
     label_type  = kwargs['kind']
     im_font     = ImageFont.truetype(kwargs['font_path'], kwargs['font_size'])
     fill_color  = kwargs['fill_color']
     orientation = kwargs['orientation']
 
+    text = apply_label_templates(text)
     # Normalise empty lines in text
     text = '\n'.join(line if line else ' ' for line in text.split('\n'))
 
