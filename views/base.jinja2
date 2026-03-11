@@ -36,10 +36,16 @@
         html.setAttribute('data-bs-theme', next);
         localStorage.setItem('theme', next);
         updateThemeIcon(next);
+        applyClipartTheme(next);
       });
 
       function updateThemeIcon(theme) {
         document.getElementById('themeIcon').className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+      }
+
+      function applyClipartTheme(theme) {
+        const f = theme === 'dark' ? 'invert(1)' : '';
+        document.querySelectorAll('.clipart-item img').forEach(function(img) { img.style.filter = f; });
       }
     </script>
     <script type="text/javascript">

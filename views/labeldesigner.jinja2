@@ -114,7 +114,7 @@
         <div id="clipartPanel">
           <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
                  placeholder="Search icons..." oninput="filterClipart()">
-          <div id="clipartGrid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:210px;overflow-y:auto;overflow-x:hidden"></div>
+          <div id="clipartGrid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-height:210px;overflow-y:auto"></div>
         </div>
 
         <div class="align-items-center gap-2 mt-3" id="imageClearBtn" style="display:none">
@@ -207,13 +207,14 @@ function buildClipartGrid() {
     names.forEach(function(name) {
       var $btn = $('<button type="button" class="btn btn-outline-secondary p-0 clipart-item">')
         .attr('title', name)
-        .css({width:'40px', height:'40px', display:'inline-flex', alignItems:'center', justifyContent:'center'})
+        .css({width:'100%', aspectRatio:'1', display:'inline-flex', alignItems:'center', justifyContent:'center'})
         .on('click', function() { selectClipart(name); });
       $('<img width="22" height="22" style="pointer-events:none" alt="' + name + '">')
         .attr('src', CLIPART_CDN + name + '.svg')
         .appendTo($btn);
       $grid.append($btn);
     });
+    applyClipartTheme(document.documentElement.getAttribute('data-bs-theme'));
   }).fail(function() {
     $grid.html('<span class="text-danger small p-1">Failed to load icon list.</span>');
   });
