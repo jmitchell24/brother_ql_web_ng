@@ -23,16 +23,10 @@
   <div class="col-md-6">
     <ul class="nav nav-tabs mb-3" id="settingsTabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-label-tab" data-bs-toggle="tab" data-bs-target="#tab-label" type="button" role="tab" title="Label Size"><i class="bi bi-file-earmark"></i></button>
+        <button class="nav-link active" id="tab-settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab" title="Settings"><i class="bi bi-sliders"></i></button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="tab-font-tab" data-bs-toggle="tab" data-bs-target="#tab-font" type="button" role="tab" title="Font Settings"><i class="bi bi-type"></i></button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-image-tab" data-bs-toggle="tab" data-bs-target="#tab-image" type="button" role="tab" title="Image"><i class="bi bi-image"></i></button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab" title="Detailed Settings"><i class="bi bi-gear"></i></button>
+        <button class="nav-link" id="tab-image-tab" data-bs-toggle="tab" data-bs-target="#tab-image" type="button" role="tab" title="Clip Art"><i class="bi bi-image"></i></button>
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-configs-tab" data-bs-toggle="tab" data-bs-target="#tab-configs" type="button" role="tab" title="Saved Configs"><i class="bi bi-bookmark"></i></button>
@@ -43,16 +37,14 @@
     </ul>
     <div class="tab-content" id="settingsTabContent">
 
-      <div class="tab-pane fade" id="tab-label" role="tabpanel">
-        <label for="labelSize" class="form-label">Size</label>
+      <div class="tab-pane fade show active" id="tab-settings" role="tabpanel">
+        <label for="labelSize" class="form-label">Label Size</label>
         <select class="form-select" id="labelSize" onchange="preview()">
           {% for label_size in label_sizes %}
             <option value="{{ label_size[0] }}" {% if label['DEFAULT_SIZE'] == label_size[0] %}selected{% endif %}>{{ label_size[1] }}</option>
           {% endfor %}
         </select>
-      </div>
-
-      <div class="tab-pane fade show active" id="tab-font" role="tabpanel">
+        <hr class="my-3">
         <label for="fontFamily" class="form-label">Font Family</label>
         <select class="form-select" id="fontFamily" onchange="preview()">
           {% for font_family_name in font_family_names %}
@@ -72,42 +64,7 @@
           <input type="radio" class="btn-check" name="fontAlign" id="alignRight" value="right" onchange="preview()">
           <label class="btn btn-outline-secondary w-100" for="alignRight"><i class="bi bi-text-right"></i></label>
         </div>
-      </div>
-
-      <div class="tab-pane fade" id="tab-image" role="tabpanel">
-        <div id="clipartPanel">
-          <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
-                 placeholder="Search icons..." oninput="filterClipart()">
-          <div id="clipartGrid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:210px;overflow-y:auto;overflow-x:hidden"></div>
-        </div>
-
-        <div class="align-items-center gap-2 mt-3" id="imageClearBtn" style="display:none">
-          <button class="btn btn-sm btn-outline-secondary" type="button" onclick="clearImage()">
-            <img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/regular/eraser.svg" width="15" height="15" class="me-1" style="vertical-align:text-bottom">Clear
-          </button>
-          <span id="clipartSelectedName" class="small fst-italic text-body-secondary text-truncate"></span>
-        </div>
-        <div id="imageOptions" style="display:none">
-          <label class="form-label mt-3">Image position</label>
-          <div class="d-flex gap-3">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
-              <label class="form-check-label" for="imageAlignLeft">Left of text</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
-              <label class="form-check-label" for="imageAlignRight">Right of text</label>
-            </div>
-          </div>
-          <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
-          <div class="input-group">
-            <input id="imageGap" class="form-control" type="number" min="0" max="200" value="20" onchange="preview()">
-            <span class="input-group-text">px</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+        <hr class="my-3">
         <div class="row g-2">
           <div class="col-6">
             <label for="marginTop" class="form-label">Margin Top</label>
@@ -149,6 +106,39 @@
               <input id="borderWidth" class="form-control" type="number" min="1" max="20" value="3" onchange="preview()" required>
               <span class="input-group-text">px</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-image" role="tabpanel">
+        <div id="clipartPanel">
+          <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
+                 placeholder="Search icons..." oninput="filterClipart()">
+          <div id="clipartGrid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:210px;overflow-y:auto;overflow-x:hidden"></div>
+        </div>
+
+        <div class="align-items-center gap-2 mt-3" id="imageClearBtn" style="display:none">
+          <button class="btn btn-sm btn-outline-secondary" type="button" onclick="clearImage()">
+            <img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/regular/eraser.svg" width="15" height="15" class="me-1" style="vertical-align:text-bottom">Clear
+          </button>
+          <span id="clipartSelectedName" class="small fst-italic text-body-secondary text-truncate"></span>
+        </div>
+        <div id="imageOptions" style="display:none">
+          <label class="form-label mt-3">Image position</label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
+              <label class="form-check-label" for="imageAlignLeft">Left of text</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
+              <label class="form-check-label" for="imageAlignRight">Right of text</label>
+            </div>
+          </div>
+          <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
+          <div class="input-group">
+            <input id="imageGap" class="form-control" type="number" min="0" max="200" value="20" onchange="preview()">
+            <span class="input-group-text">px</span>
           </div>
         </div>
       </div>
