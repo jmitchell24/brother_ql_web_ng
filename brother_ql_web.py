@@ -233,6 +233,14 @@ def create_label_im(text, **kwargs):
                        outline=fill_color, width=bw)
     return im
 
+CLIPART_DIR = os.path.join(os.path.dirname(__file__), 'static', 'clipart')
+
+@get('/api/clipart')
+def clipart_list():
+    response.content_type = 'application/json'
+    names = sorted(f[:-4] for f in os.listdir(CLIPART_DIR) if f.endswith('.svg'))
+    return json.dumps(names)
+
 USB_SPEEDS = {1: 'Low Speed (1.5 Mbit/s)', 2: 'Full Speed (12 Mbit/s)', 3: 'High Speed (480 Mbit/s)'}
 
 @get('/api/printer/info')

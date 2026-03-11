@@ -50,17 +50,6 @@
             <option value="{{ label_size[0] }}" {% if label['DEFAULT_SIZE'] == label_size[0] %}selected{% endif %}>{{ label_size[1] }}</option>
           {% endfor %}
         </select>
-        <label class="form-label mt-3">Orientation</label>
-        <div class="d-flex gap-3">
-          <div class="form-check">
-            <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientStandard" value="standard" {% if label['DEFAULT_ORIENTATION'] != 'rotated' %}checked{% endif %}>
-            <label class="form-check-label" for="orientStandard">Standard</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" onchange="preview()" name="orientation" id="orientRotated" value="rotated" {% if label['DEFAULT_ORIENTATION'] == 'rotated' %}checked{% endif %}>
-            <label class="form-check-label" for="orientRotated">Rotated</label>
-          </div>
-        </div>
       </div>
 
       <div class="tab-pane fade show active" id="tab-font" role="tabpanel">
@@ -222,75 +211,32 @@ function clearClipart() { clearImage(); }
 
 // --- Clip Art ---
 
-var CLIPART_CDN = 'https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/regular/';
-
-var CLIPART_ICONS = [
-  // Faces & People
-  {n:'smiley',l:'Smiley'},{n:'smiley-wink',l:'Wink'},{n:'thumbs-up',l:'Thumbs Up'},
-  {n:'thumbs-down',l:'Thumbs Down'},{n:'hand',l:'Hand'},{n:'hand-waving',l:'Wave'},
-  {n:'user',l:'Person'},{n:'users',l:'People'},
-  // Symbols
-  {n:'star',l:'Star'},{n:'heart',l:'Heart'},{n:'lightning',l:'Lightning'},
-  {n:'check-circle',l:'Check'},{n:'warning-circle',l:'Warning'},
-  {n:'info',l:'Info'},{n:'question',l:'Question'},{n:'shield',l:'Shield'},
-  {n:'crown',l:'Crown'},{n:'trophy',l:'Trophy'},{n:'flag',l:'Flag'},
-  // Nature
-  {n:'sun',l:'Sun'},{n:'moon',l:'Moon'},{n:'cloud',l:'Cloud'},
-  {n:'snowflake',l:'Snowflake'},{n:'fire',l:'Fire'},{n:'leaf',l:'Leaf'},
-  {n:'flower',l:'Flower'},{n:'tree',l:'Tree'},{n:'rainbow',l:'Rainbow'},
-  {n:'mountains',l:'Mountains'},{n:'waves',l:'Waves'},
-  // Animals
-  {n:'dog',l:'Dog'},{n:'cat',l:'Cat'},{n:'bird',l:'Bird'},
-  {n:'fish',l:'Fish'},{n:'butterfly',l:'Butterfly'},{n:'paw-print',l:'Paw'},
-  {n:'rabbit',l:'Rabbit'},{n:'horse',l:'Horse'},
-  // Food & Drink
-  {n:'coffee',l:'Coffee'},{n:'beer-bottle',l:'Beer'},{n:'wine',l:'Wine'},
-  {n:'pizza-slice',l:'Pizza'},{n:'ice-cream',l:'Ice Cream'},
-  {n:'fork-knife',l:'Cutlery'},{n:'cake',l:'Cake'},{n:'cookie',l:'Cookie'},
-  // Objects & Tools
-  {n:'house',l:'House'},{n:'car',l:'Car'},{n:'phone',l:'Phone'},
-  {n:'camera',l:'Camera'},{n:'music-notes',l:'Music'},{n:'gift',l:'Gift'},
-  {n:'scissors',l:'Scissors'},{n:'wrench',l:'Wrench'},{n:'bell',l:'Bell'},
-  {n:'key',l:'Key'},{n:'lock',l:'Lock'},{n:'hammer',l:'Hammer'},
-  {n:'lightbulb',l:'Lightbulb'},{n:'umbrella',l:'Umbrella'},
-  // Arrows
-  {n:'arrow-right',l:'Arrow Right'},{n:'arrow-left',l:'Arrow Left'},
-  {n:'arrow-up',l:'Arrow Up'},{n:'arrow-down',l:'Arrow Down'},
-  {n:'arrows-out',l:'Expand'},
-  // Business
-  {n:'envelope',l:'Email'},{n:'calendar',l:'Calendar'},{n:'clock',l:'Clock'},
-  {n:'printer',l:'Printer'},{n:'tag',l:'Tag'},{n:'briefcase',l:'Briefcase'},
-  {n:'shopping-cart',l:'Cart'},{n:'package',l:'Package'},
-  {n:'barcode',l:'Barcode'},{n:'qr-code',l:'QR Code'},
-  // Activities & Transport
-  {n:'bicycle',l:'Bicycle'},{n:'football',l:'Football'},
-  {n:'basketball',l:'Basketball'},{n:'headphones',l:'Headphones'},
-  {n:'pencil',l:'Pencil'},{n:'book',l:'Book'},
-  {n:'airplane',l:'Airplane'},{n:'rocket',l:'Rocket'},{n:'anchor',l:'Anchor'},
-];
+var CLIPART_CDN = '/static/clipart/';
 
 function buildClipartGrid() {
   var $grid = $('#clipartGrid').empty();
-  CLIPART_ICONS.forEach(function(icon) {
-    var $btn = $('<button type="button" class="btn btn-outline-secondary p-0 clipart-item">')
-      .attr('title', icon.l)
-      .css({width:'40px', height:'40px', display:'inline-flex', alignItems:'center', justifyContent:'center'})
-      .on('click', function() { selectClipart(icon.n); });
-    var $img = $('<img width="22" height="22" alt="' + icon.n + '" style="pointer-events:none">')
-      .attr('src', CLIPART_CDN + icon.n + '.svg')
-      .on('error', function() { $btn.hide(); });
-    $btn.append($img);
-    $grid.append($btn);
+  $grid.html('<span class="text-body-secondary small p-1">Loading icons\u2026</span>');
+  $.getJSON('/api/clipart', function(names) {
+    $grid.empty();
+    names.forEach(function(name) {
+      var $btn = $('<button type="button" class="btn btn-outline-secondary p-0 clipart-item">')
+        .attr('title', name)
+        .css({width:'40px', height:'40px', display:'inline-flex', alignItems:'center', justifyContent:'center'})
+        .on('click', function() { selectClipart(name); });
+      $('<img width="22" height="22" style="pointer-events:none" alt="' + name + '">')
+        .attr('src', CLIPART_CDN + name + '.svg')
+        .appendTo($btn);
+      $grid.append($btn);
+    });
+  }).fail(function() {
+    $grid.html('<span class="text-danger small p-1">Failed to load icon list.</span>');
   });
 }
 
 function filterClipart() {
   var q = ($('#clipartSearch').val() || '').toLowerCase();
   $('#clipartGrid .clipart-item').each(function() {
-    var match = !q
-      || $(this).attr('title').toLowerCase().includes(q)
-      || $(this).find('img').attr('alt').toLowerCase().includes(q);
-    $(this).toggle(match);
+    $(this).toggle(!q || $(this).attr('title').includes(q));
   });
 }
 
@@ -328,7 +274,7 @@ function formData() {
     font_size:     $('#fontSize').val(),
     label_size:    $('#labelSize option:selected').val(),
     align:         $('input[name=fontAlign]:checked').val(),
-    orientation:   $('input[name=orientation]:checked').val() || 'standard',
+    orientation:   'standard',
     margin_top:    $('#marginTop').val(),
     margin_bottom: $('#marginBottom').val(),
     margin_left:   $('#marginLeft').val(),
@@ -349,9 +295,7 @@ function onBorderToggle() {
 }
 
 function preview() {
-  var isStandard = $('input[name=orientation]:checked').val() == 'standard';
-  $('.marginsTopBottom').prop('disabled', !isStandard);
-  $('.marginsLeftRight').prop('disabled', isStandard);
+  $('.marginsLeftRight').prop('disabled', true);
 
   $.ajax({
     type:        'POST',
@@ -616,7 +560,6 @@ function loadConfig(name) {
     // Label size
     $('#labelSize').val(d.label_size);
     // Orientation
-    $('input[name=orientation][value="' + (d.orientation || 'standard') + '"]').prop('checked', true);
     // Margins
     $('#marginTop').val(d.margin_top);
     $('#marginBottom').val(d.margin_bottom);
