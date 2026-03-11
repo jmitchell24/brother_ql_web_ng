@@ -114,12 +114,12 @@
         <div id="clipartPanel">
           <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
                  placeholder="Search icons..." oninput="filterClipart()">
-          <div id="clipartGrid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-height:210px;overflow-y:auto"></div>
+          <div id="clipartGrid" class="border rounded p-2" style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-height:210px;overflow-y:auto"></div>
         </div>
 
         <div class="align-items-center gap-2 mt-3" id="imageClearBtn" style="display:none">
-          <button class="btn btn-sm btn-outline-secondary" type="button" onclick="clearImage()">
-            <img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/regular/eraser.svg" width="15" height="15" class="me-1" style="vertical-align:text-bottom">Clear
+          <button class="btn btn-sm btn-outline-danger" type="button" onclick="clearImage()">
+            Clear
           </button>
           <span id="clipartSelectedName" class="small fst-italic text-body-secondary text-truncate"></span>
         </div>
@@ -205,11 +205,11 @@ function buildClipartGrid() {
   $.getJSON('/api/clipart', function(names) {
     $grid.empty();
     names.forEach(function(name) {
-      var $btn = $('<button type="button" class="btn btn-outline-secondary p-0 clipart-item">')
+      var $btn = $('<button type="button" class="btn btn-outline-secondary p-1 clipart-item">')
         .attr('title', name)
         .css({width:'100%', aspectRatio:'1', display:'inline-flex', alignItems:'center', justifyContent:'center'})
         .on('click', function() { selectClipart(name); });
-      $('<img width="22" height="22" style="pointer-events:none" alt="' + name + '">')
+      $('<img width="28" height="28" style="pointer-events:none" alt="' + name + '">')
         .attr('src', CLIPART_CDN + name + '.svg')
         .appendTo($btn);
       $grid.append($btn);
