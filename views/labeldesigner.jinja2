@@ -86,20 +86,14 @@
       </div>
 
       <div class="tab-pane fade" id="tab-image" role="tabpanel">
-        <div class="d-flex align-items-center justify-content-between mb-1">
-          <label class="form-label mb-0">Clip Art</label>
-          <button class="btn btn-sm btn-outline-secondary" type="button" onclick="toggleClipartPanel()">
-            <i class="bi bi-grid-3x3-gap me-1"></i>Browse
-          </button>
-        </div>
-        <div id="clipartSelectedInfo" class="d-flex align-items-center gap-1 mb-1 small" style="display:none">
+        <div id="clipartSelectedInfo" class="d-flex align-items-center gap-1 mb-2 small" style="display:none">
           <i class="bi bi-image-fill text-secondary"></i>
           <span id="clipartSelectedName" class="text-truncate fst-italic"></span>
           <button type="button" class="btn btn-sm btn-link p-0 ms-1 text-danger lh-1" onclick="clearClipart()" title="Remove clip art">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
-        <div id="clipartPanel" style="display:none">
+        <div id="clipartPanel">
           <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
                  placeholder="Search icons..." oninput="filterClipart()">
           <div id="clipartGrid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:210px;overflow-y:auto;overflow-x:hidden"></div>
@@ -308,17 +302,6 @@ function filterClipart() {
   });
 }
 
-function toggleClipartPanel() {
-  var $panel = $('#clipartPanel');
-  if ($panel.is(':visible')) {
-    $panel.hide();
-  } else {
-    if (!$('#clipartGrid').children().length) buildClipartGrid();
-    $('#clipartSearch').val('');
-    filterClipart();
-    $panel.show();
-  }
-}
 
 function selectClipart(name) {
   fetch(CLIPART_CDN + name + '.svg')
@@ -334,7 +317,6 @@ function selectClipart(name) {
         URL.revokeObjectURL(objUrl);
         cachedImageData = canvas.toDataURL('image/png').split(',')[1];
         cachedClipartIcon = name;
-        $('#clipartPanel').hide();
         $('#clipartSelectedName').text(name);
         $('#clipartSelectedInfo').show();
         $('#imageOptions, #imageClearBtn').show();
@@ -456,6 +438,7 @@ function updatePrinterInfo() {
 
 updatePrinterInfo();
 setInterval(updatePrinterInfo, 5000);
+buildClipartGrid();
 preview();
 
 // ---- Saved configs ----
