@@ -140,12 +140,12 @@ def get_label_context(request):
 # ---------------------------------------------------------------------------
 
 LABEL_TEMPLATE_TOKENS = {
-    # Current date — "Mar 11, 2026"
-    'date':     lambda: datetime.now().strftime('%b %-d, %Y'),
+    # Current date — "Mar. 11, 2026"  (%b. adds the period after the abbreviation)
+    'date':     lambda: datetime.now().strftime('%b. %-d, %Y'),
     # Current time — "3:45 PM"
     'time':     lambda: datetime.now().strftime('%-I:%M %p'),
-    # Date and time — "Mar 11, 2026 3:45 PM"
-    'datetime': lambda: datetime.now().strftime('%b %-d, %Y %-I:%M %p'),
+    # Date and time — "Mar. 11, 2026 3:45 PM"
+    'datetime': lambda: datetime.now().strftime('%b. %-d, %Y %-I:%M %p'),
     # Day of the week — "Tuesday"
     'day':      lambda: datetime.now().strftime('%A'),
     # Full month name — "March"
