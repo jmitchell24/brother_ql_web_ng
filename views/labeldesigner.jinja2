@@ -111,6 +111,7 @@
       </div>
 
       <div class="tab-pane fade" id="tab-image" role="tabpanel">
+        <p class="text-body-secondary small mb-2">Icons by <a href="https://phosphoricons.com" target="_blank" rel="noopener" class="text-body-secondary">Phosphor Icons</a>.</p>
         <div id="clipartPanel">
           <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
                  placeholder="Search icons..." oninput="filterClipart()">
@@ -269,7 +270,6 @@ function formData() {
     border:        borderOn ? 'true' : 'false',
     border_width:  borderOn ? $('#borderWidth').val() : 0,
     image_data:    cachedImageData || '',
-    image_bw:      'true',
     image_align:   $('input[name=imageAlign]:checked').val() || 'left',
     image_gap:     $('#imageGap').val()
   };
@@ -336,12 +336,16 @@ function updatePrinterInfo() {
     $('#pi-label').text(d.label || '—');
 
     var badge = $('#printerStatusBadge');
+    var $tab = $('#tab-printer-tab');
     if (d.status === 'online') {
       badge.text('Online').removeClass().addClass('badge text-bg-success');
+      $tab.removeClass('text-danger text-secondary').addClass('text-success');
     } else if (d.status === 'offline') {
       badge.text('Offline').removeClass().addClass('badge text-bg-danger');
+      $tab.removeClass('text-success text-secondary').addClass('text-danger');
     } else {
       badge.text(d.status || '—').removeClass().addClass('badge text-bg-secondary');
+      $tab.removeClass('text-success text-danger').addClass('text-secondary');
     }
 
     if (d.serial) {
@@ -370,7 +374,7 @@ function configPayload() {
   var d = formData();
   d.text = $('#labelText').val(); // save actual text (not replaced with space)
   d.clipart_icon = cachedClipartIcon || '';
-  if (cachedClipartIcon) d.image_data = ''; // don't bloat config with rendered raster
+  delete d.image_data;
   return d;
 }
 
@@ -535,6 +539,7 @@ function renameConfig(name) {
 }
 
 function loadConfig(name) {
+  if (!confirm('Load "' + name + '"? Unsaved changes will be lost.')) return;
   $.getJSON('/api/configs/' + encodeURIComponent(name), function(d) {
     $('#configName').val(name);
     // Text
@@ -561,10 +566,6 @@ function loadConfig(name) {
     cachedClipartIcon = null;
     if (d.clipart_icon) {
       selectClipart(d.clipart_icon); // async; calls preview() on completion
-    } else if (d.image_data) {
-      cachedImageData = d.image_data;
-      $('#imageOptions').show();
-      $('#imageClearBtn').css('display', 'flex');
     } else {
       clearImage();
     }

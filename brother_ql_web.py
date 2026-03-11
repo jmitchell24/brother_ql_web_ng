@@ -74,7 +74,7 @@ def get_label_context(request):
       'border':        d.get('border', '') == 'true',
       'border_width':  int(d.get('border_width', 3)),
       'image_data':    d.get('image_data', '') or None,
-      'image_bw':      d.get('image_bw', 'true') == 'true',
+      'image_bw':      True,
       'image_align':   d.get('image_align', 'left'),
       'image_gap':     int(d.get('image_gap', 20)),
     }
