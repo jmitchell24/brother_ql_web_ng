@@ -6,7 +6,7 @@
   {# Left column: text input, preview + print #}
   <div class="col-md-6">
     <label for="labelText" class="form-label">Label Text</label>
-    <textarea rows="4" id="labelText" class="form-control mb-3" onchange="preview()" oninput="preview()"></textarea>
+    <textarea rows="4" id="labelText" class="form-control mb-3" onchange="dpreview()" oninput="dpreview()"></textarea>
     <div class="mb-2">
       <img id="previewImg" class="img-fluid rounded border" style="max-height: 200px; width: auto;"/>
     </div>
@@ -68,19 +68,19 @@
         <div class="row g-2">
           <div class="col-6">
             <div class="d-flex justify-content-between"><label for="marginTop" class="form-label mb-1">Margin Top</label><span class="text-body-secondary small" id="marginTopVal">0%</span></div>
-            <input id="marginTop" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginTopVal').text(this.value+'%'); preview()">
+            <input id="marginTop" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginTopVal').text(this.value+'%'); dpreview()">
           </div>
           <div class="col-6">
             <div class="d-flex justify-content-between"><label for="marginBottom" class="form-label mb-1">Margin Bottom</label><span class="text-body-secondary small" id="marginBottomVal">0%</span></div>
-            <input id="marginBottom" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginBottomVal').text(this.value+'%'); preview()">
+            <input id="marginBottom" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginBottomVal').text(this.value+'%'); dpreview()">
           </div>
           <div class="col-6">
             <div class="d-flex justify-content-between"><label for="marginLeft" class="form-label mb-1">Margin Left</label><span class="text-body-secondary small" id="marginLeftVal">0%</span></div>
-            <input id="marginLeft" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginLeftVal').text(this.value+'%'); preview()">
+            <input id="marginLeft" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginLeftVal').text(this.value+'%'); dpreview()">
           </div>
           <div class="col-6">
             <div class="d-flex justify-content-between"><label for="marginRight" class="form-label mb-1">Margin Right</label><span class="text-body-secondary small" id="marginRightVal">0%</span></div>
-            <input id="marginRight" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginRightVal').text(this.value+'%'); preview()">
+            <input id="marginRight" class="form-range" type="range" min="0" max="25" value="0" oninput="$('#marginRightVal').text(this.value+'%'); dpreview()">
           </div>
           <div class="col-12 mt-2">
             <div class="form-check">
@@ -125,7 +125,7 @@
             <span class="text-body-secondary small" id="imageGapVal">0%</span>
           </div>
           <input id="imageGap" class="form-range" type="range" min="0" max="50" value="0"
-                 oninput="$('#imageGapVal').text(this.value+'%'); preview()">
+                 oninput="$('#imageGapVal').text(this.value+'%'); dpreview()">
         </div>
       </div>
 
@@ -175,6 +175,9 @@
 {% block javascript %}
 var cachedImageData = null;
 var cachedClipartIcon = null;
+
+var _previewTimer = null;
+function dpreview() { clearTimeout(_previewTimer); _previewTimer = setTimeout(preview, 300); }
 
 function clearImage() {
   cachedImageData = null;
