@@ -78,19 +78,6 @@ def get_label_context(request):
       'image_align':   d.get('image_align', 'left'),
       'image_gap':     int(d.get('image_gap', 0)),
     }
-    context['margin_top']    = int(context['font_size']*context['margin_top'])
-    context['margin_bottom'] = int(context['font_size']*context['margin_bottom'])
-    context['margin_left']   = int(context['font_size']*context['margin_left'])
-    context['margin_right']  = int(context['font_size']*context['margin_right'])
-
-    # Border width is added to margins so text stays clear of the border
-    if context['border']:
-        bw = context['border_width']
-        context['margin_top']    += bw
-        context['margin_bottom'] += bw
-        context['margin_left']   += bw
-        context['margin_right']  += bw
-
     context['fill_color']  = (255, 0, 0) if 'red' in context['label_size'] else (0, 0, 0)
 
     def get_font_path(font_family_name, font_style_name):
@@ -116,6 +103,19 @@ def get_label_context(request):
     if height > width: width, height = height, width
     if context['orientation'] == 'rotated': height, width = width, height
     context['width'], context['height'] = width, height
+
+    context['margin_top']    = int(height * context['margin_top'])
+    context['margin_bottom'] = int(height * context['margin_bottom'])
+    context['margin_left']   = int(width  * context['margin_left'])
+    context['margin_right']  = int(width  * context['margin_right'])
+
+    # Border width is added to margins so text stays clear of the border
+    if context['border']:
+        bw = context['border_width']
+        context['margin_top']    += bw
+        context['margin_bottom'] += bw
+        context['margin_left']   += bw
+        context['margin_right']  += bw
 
     return context
 
