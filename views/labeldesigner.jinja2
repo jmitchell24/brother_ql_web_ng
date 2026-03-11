@@ -195,17 +195,30 @@ function buildClipartGrid() {
   $grid.html('<span class="text-body-secondary small p-1">Loading icons\u2026</span>');
   $.getJSON('/api/clipart', function(names) {
     $grid.empty();
+    var theme = document.documentElement.getAttribute('data-bs-theme');
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (!entry.isIntersecting) return;
+        var img = entry.target.querySelector('img');
+        if (img && !img.src) {
+          img.src = CLIPART_CDN + img.getAttribute('data-name') + '.svg';
+          if (theme === 'dark') img.style.filter = 'invert(1)';
+        }
+        observer.unobserve(entry.target);
+      });
+    }, {root: $grid[0], rootMargin: '100px'});
+
     names.forEach(function(name) {
       var $btn = $('<button type="button" class="btn btn-outline-secondary p-1 clipart-item">')
         .attr('title', name)
         .css({width:'100%', aspectRatio:'1', display:'inline-flex', alignItems:'center', justifyContent:'center'})
         .on('click', function() { selectClipart(name); });
       $('<img width="28" height="28" style="pointer-events:none" alt="' + name + '">')
-        .attr('src', CLIPART_CDN + name + '.svg')
+        .attr('data-name', name)
         .appendTo($btn);
       $grid.append($btn);
+      observer.observe($btn[0]);
     });
-    applyClipartTheme(document.documentElement.getAttribute('data-bs-theme'));
   }).fail(function() {
     $grid.html('<span class="text-danger small p-1">Failed to load icon list.</span>');
   });
