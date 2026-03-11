@@ -125,15 +125,11 @@
         </div>
         <div id="imageOptions" style="display:none">
           <label class="form-label mt-3">Image position</label>
-          <div class="d-flex gap-3">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
-              <label class="form-check-label" for="imageAlignLeft">Left of text</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
-              <label class="form-check-label" for="imageAlignRight">Right of text</label>
-            </div>
+          <div class="btn-group d-flex" role="group">
+            <input type="radio" class="btn-check" name="imageAlign" id="imageAlignLeft" value="left" checked onchange="preview()">
+            <label class="btn btn-outline-secondary w-100" for="imageAlignLeft">Left of text</label>
+            <input type="radio" class="btn-check" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
+            <label class="btn btn-outline-secondary w-100" for="imageAlignRight">Right of text</label>
           </div>
           <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
           <div class="input-group">
