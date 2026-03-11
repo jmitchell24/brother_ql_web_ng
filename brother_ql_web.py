@@ -5,7 +5,7 @@
 This is a web service to print labels on Brother QL label printers.
 """
 
-import sys, logging, random, json, argparse, re, base64, os
+import sys, logging, random, json, argparse, re, base64, os, subprocess
 from io import BytesIO
 
 from bottle import run, route, get, post, put, delete, response, request, jinja2_view as view, static_file, redirect, BaseRequest, abort
@@ -22,6 +22,13 @@ from font_helpers import get_fonts
 logger = logging.getLogger(__name__)
 
 LABEL_SIZES = [ (name, label_type_specs[name]['name']) for name in label_sizes]
+
+try:
+    _ts = subprocess.check_output(['git', 'log', '-1', '--format=%cd', '--date=format:%Y.%m.%d'],
+                                   stderr=subprocess.DEVNULL).decode().strip()
+    VERSION = _ts or 'unknown'
+except Exception:
+    VERSION = 'unknown'
 
 try:
     with open('config.json', encoding='utf-8') as fh:
@@ -47,7 +54,8 @@ def labeldesigner():
             'fonts': FONTS,
             'label_sizes': LABEL_SIZES,
             'website': CONFIG['WEBSITE'],
-            'label': CONFIG['LABEL']}
+            'label': CONFIG['LABEL'],
+            'version': VERSION}
 
 def get_label_context(request):
     """ might raise LookupError() """
