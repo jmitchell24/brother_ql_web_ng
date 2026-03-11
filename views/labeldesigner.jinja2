@@ -86,10 +86,26 @@
       </div>
 
       <div class="tab-pane fade" id="tab-image" role="tabpanel">
-        <label for="imageFile" class="form-label">Image file</label>
-        <input class="form-control" type="file" id="imageFile" accept="image/*">
-        <div class="form-text">Max 16 MB. PNG, JPG, GIF, WebP, etc.</div>
-        <button class="btn btn-sm btn-outline-secondary mt-2" type="button" id="imageClearBtn" style="display:none" onclick="clearImage()">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <label class="form-label mb-0">Clip Art</label>
+          <button class="btn btn-sm btn-outline-secondary" type="button" onclick="toggleClipartPanel()">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Browse
+          </button>
+        </div>
+        <div id="clipartSelectedInfo" class="d-flex align-items-center gap-1 mb-1 small" style="display:none">
+          <i class="bi bi-image-fill text-secondary"></i>
+          <span id="clipartSelectedName" class="text-truncate fst-italic"></span>
+          <button type="button" class="btn btn-sm btn-link p-0 ms-1 text-danger lh-1" onclick="clearClipart()" title="Remove clip art">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div id="clipartPanel" style="display:none">
+          <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
+                 placeholder="Search icons..." oninput="filterClipart()">
+          <div id="clipartGrid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:210px;overflow-y:auto;overflow-x:hidden"></div>
+        </div>
+
+        <button class="btn btn-sm btn-outline-secondary mt-3" type="button" id="imageClearBtn" style="display:none" onclick="clearImage()">
           <i class="bi bi-x me-1"></i>Clear image
         </button>
         <div id="imageOptions" style="display:none">
@@ -207,24 +223,125 @@
 
 {% block javascript %}
 var cachedImageData = null;
-
-document.getElementById('imageFile').addEventListener('change', function() {
-  var file = this.files[0];
-  if (!file) { clearImage(); return; }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    cachedImageData = e.target.result.split(',')[1];
-    $('#imageOptions, #imageClearBtn').show();
-    preview();
-  };
-  reader.readAsDataURL(file);
-});
+var cachedClipartIcon = null;
 
 function clearImage() {
   cachedImageData = null;
-  document.getElementById('imageFile').value = '';
-  $('#imageOptions, #imageClearBtn').hide();
+  cachedClipartIcon = null;
+  $('#imageOptions, #imageClearBtn, #clipartSelectedInfo').hide();
   preview();
+}
+
+function clearClipart() { clearImage(); }
+
+// --- Clip Art ---
+
+var CLIPART_CDN = 'https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/regular/';
+
+var CLIPART_ICONS = [
+  // Faces & People
+  {n:'smiley',l:'Smiley'},{n:'smiley-wink',l:'Wink'},{n:'thumbs-up',l:'Thumbs Up'},
+  {n:'thumbs-down',l:'Thumbs Down'},{n:'hand',l:'Hand'},{n:'hand-waving',l:'Wave'},
+  {n:'user',l:'Person'},{n:'users',l:'People'},
+  // Symbols
+  {n:'star',l:'Star'},{n:'heart',l:'Heart'},{n:'lightning',l:'Lightning'},
+  {n:'check-circle',l:'Check'},{n:'warning-circle',l:'Warning'},
+  {n:'info',l:'Info'},{n:'question',l:'Question'},{n:'shield',l:'Shield'},
+  {n:'crown',l:'Crown'},{n:'trophy',l:'Trophy'},{n:'flag',l:'Flag'},
+  // Nature
+  {n:'sun',l:'Sun'},{n:'moon',l:'Moon'},{n:'cloud',l:'Cloud'},
+  {n:'snowflake',l:'Snowflake'},{n:'fire',l:'Fire'},{n:'leaf',l:'Leaf'},
+  {n:'flower',l:'Flower'},{n:'tree',l:'Tree'},{n:'rainbow',l:'Rainbow'},
+  {n:'mountains',l:'Mountains'},{n:'waves',l:'Waves'},
+  // Animals
+  {n:'dog',l:'Dog'},{n:'cat',l:'Cat'},{n:'bird',l:'Bird'},
+  {n:'fish',l:'Fish'},{n:'butterfly',l:'Butterfly'},{n:'paw-print',l:'Paw'},
+  {n:'rabbit',l:'Rabbit'},{n:'horse',l:'Horse'},
+  // Food & Drink
+  {n:'coffee',l:'Coffee'},{n:'beer-bottle',l:'Beer'},{n:'wine',l:'Wine'},
+  {n:'pizza-slice',l:'Pizza'},{n:'ice-cream',l:'Ice Cream'},
+  {n:'fork-knife',l:'Cutlery'},{n:'cake',l:'Cake'},{n:'cookie',l:'Cookie'},
+  // Objects & Tools
+  {n:'house',l:'House'},{n:'car',l:'Car'},{n:'phone',l:'Phone'},
+  {n:'camera',l:'Camera'},{n:'music-notes',l:'Music'},{n:'gift',l:'Gift'},
+  {n:'scissors',l:'Scissors'},{n:'wrench',l:'Wrench'},{n:'bell',l:'Bell'},
+  {n:'key',l:'Key'},{n:'lock',l:'Lock'},{n:'hammer',l:'Hammer'},
+  {n:'lightbulb',l:'Lightbulb'},{n:'umbrella',l:'Umbrella'},
+  // Arrows
+  {n:'arrow-right',l:'Arrow Right'},{n:'arrow-left',l:'Arrow Left'},
+  {n:'arrow-up',l:'Arrow Up'},{n:'arrow-down',l:'Arrow Down'},
+  {n:'arrows-out',l:'Expand'},
+  // Business
+  {n:'envelope',l:'Email'},{n:'calendar',l:'Calendar'},{n:'clock',l:'Clock'},
+  {n:'printer',l:'Printer'},{n:'tag',l:'Tag'},{n:'briefcase',l:'Briefcase'},
+  {n:'shopping-cart',l:'Cart'},{n:'package',l:'Package'},
+  {n:'barcode',l:'Barcode'},{n:'qr-code',l:'QR Code'},
+  // Activities & Transport
+  {n:'bicycle',l:'Bicycle'},{n:'football',l:'Football'},
+  {n:'basketball',l:'Basketball'},{n:'headphones',l:'Headphones'},
+  {n:'pencil',l:'Pencil'},{n:'book',l:'Book'},
+  {n:'airplane',l:'Airplane'},{n:'rocket',l:'Rocket'},{n:'anchor',l:'Anchor'},
+];
+
+function buildClipartGrid() {
+  var $grid = $('#clipartGrid').empty();
+  CLIPART_ICONS.forEach(function(icon) {
+    var $btn = $('<button type="button" class="btn btn-outline-secondary p-0 clipart-item">')
+      .attr('title', icon.l)
+      .css({width:'40px', height:'40px', display:'inline-flex', alignItems:'center', justifyContent:'center'})
+      .on('click', function() { selectClipart(icon.n); });
+    var $img = $('<img width="22" height="22" alt="' + icon.n + '" style="pointer-events:none">')
+      .attr('src', CLIPART_CDN + icon.n + '.svg')
+      .on('error', function() { $btn.hide(); });
+    $btn.append($img);
+    $grid.append($btn);
+  });
+}
+
+function filterClipart() {
+  var q = ($('#clipartSearch').val() || '').toLowerCase();
+  $('#clipartGrid .clipart-item').each(function() {
+    var match = !q
+      || $(this).attr('title').toLowerCase().includes(q)
+      || $(this).find('img').attr('alt').toLowerCase().includes(q);
+    $(this).toggle(match);
+  });
+}
+
+function toggleClipartPanel() {
+  var $panel = $('#clipartPanel');
+  if ($panel.is(':visible')) {
+    $panel.hide();
+  } else {
+    if (!$('#clipartGrid').children().length) buildClipartGrid();
+    $('#clipartSearch').val('');
+    filterClipart();
+    $panel.show();
+  }
+}
+
+function selectClipart(name) {
+  fetch(CLIPART_CDN + name + '.svg')
+    .then(function(r) { return r.text(); })
+    .then(function(svgText) {
+      var blob = new Blob([svgText], {type: 'image/svg+xml'});
+      var objUrl = URL.createObjectURL(blob);
+      var canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      var img = new Image();
+      img.onload = function() {
+        canvas.getContext('2d').drawImage(img, 0, 0, 256, 256);
+        URL.revokeObjectURL(objUrl);
+        cachedImageData = canvas.toDataURL('image/png').split(',')[1];
+        cachedClipartIcon = name;
+        $('#clipartPanel').hide();
+        $('#clipartSelectedName').text(name);
+        $('#clipartSelectedInfo').show();
+        $('#imageOptions, #imageClearBtn').show();
+        preview();
+      };
+      img.src = objUrl;
+    });
 }
 
 function formData() {
@@ -346,6 +463,8 @@ preview();
 function configPayload() {
   var d = formData();
   d.text = $('#labelText').val(); // save actual text (not replaced with space)
+  d.clipart_icon = cachedClipartIcon || '';
+  if (cachedClipartIcon) d.image_data = ''; // don't bloat config with rendered raster
   return d;
 }
 
@@ -533,10 +652,14 @@ function loadConfig(name) {
     $('#borderEnabled').prop('checked', borderOn);
     $('#borderWidthRow').toggle(borderOn);
     if (borderOn) $('#borderWidth').val(d.border_width);
-    // Image
-    if (d.image_data) {
+    // Image / Clip art
+    cachedClipartIcon = null;
+    if (d.clipart_icon) {
+      selectClipart(d.clipart_icon); // async; calls preview() on completion
+    } else if (d.image_data) {
       cachedImageData = d.image_data;
       $('#imageOptions, #imageClearBtn').show();
+      $('#clipartSelectedInfo').hide();
     } else {
       clearImage();
     }

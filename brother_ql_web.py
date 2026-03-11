@@ -200,7 +200,12 @@ def create_label_im(text, **kwargs):
             else:
                 horizontal_offset = text_x
         else:
-            horizontal_offset = max((width - textsize[0]) // 2, 0)
+            if kwargs['align'] == 'left':
+                horizontal_offset = kwargs['margin_left']
+            elif kwargs['align'] == 'right':
+                horizontal_offset = max(width - kwargs['margin_right'] - textsize[0], 0)
+            else:
+                horizontal_offset = max((width - textsize[0]) // 2, 0)
 
         if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
             vertical_offset  = (height - textsize[1]) // 2
@@ -211,8 +216,10 @@ def create_label_im(text, **kwargs):
     elif orientation == 'rotated':
         vertical_offset  = (height - textsize[1]) // 2
         vertical_offset += (kwargs['margin_top'] - kwargs['margin_bottom']) // 2
-        if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
+        if label_type in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL) or kwargs['align'] == 'center':
             horizontal_offset = max((width - textsize[0]) // 2, 0)
+        elif kwargs['align'] == 'right':
+            horizontal_offset = max(width - kwargs['margin_right'] - textsize[0], 0)
         else:
             horizontal_offset = kwargs['margin_left']
         if label_img:
