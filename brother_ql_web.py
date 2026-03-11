@@ -76,7 +76,7 @@ def get_label_context(request):
       'image_data':    d.get('image_data', '') or None,
       'image_bw':      True,
       'image_align':   d.get('image_align', 'left'),
-      'image_gap':     int(d.get('image_gap', 20)),
+      'image_gap':     int(d.get('image_gap', 0)),
     }
     context['margin_top']    = int(context['font_size']*context['margin_top'])
     context['margin_bottom'] = int(context['font_size']*context['margin_bottom'])
@@ -135,7 +135,7 @@ def create_label_im(text, **kwargs):
     textsize = (tb[2] - tb[0], tb[3] - tb[1])
 
     width, height = kwargs['width'], kwargs['height']
-    gap = kwargs['image_gap']
+    gap = int(kwargs['image_gap'] * width / 100)
 
     # --- Load and process image ---
     label_img = None

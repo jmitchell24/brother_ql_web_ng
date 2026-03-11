@@ -132,11 +132,12 @@
             <input type="radio" class="btn-check" name="imageAlign" id="imageAlignRight" value="right" onchange="preview()">
             <label class="btn btn-outline-secondary w-100" for="imageAlignRight">Right of text</label>
           </div>
-          <label for="imageGap" class="form-label mt-3">Gap between image and text</label>
-          <div class="input-group">
-            <input id="imageGap" class="form-control" type="number" min="0" max="200" value="20" onchange="preview()">
-            <span class="input-group-text">px</span>
+          <div class="d-flex justify-content-between mt-3">
+            <label for="imageGap" class="form-label mb-1">Gap</label>
+            <span class="text-body-secondary small" id="imageGapVal">0%</span>
           </div>
+          <input id="imageGap" class="form-range" type="range" min="0" max="50" value="0"
+                 oninput="$('#imageGapVal').text(this.value+'%'); preview()">
         </div>
       </div>
 
@@ -570,7 +571,7 @@ function loadConfig(name) {
       clearImage();
     }
     $('input[name=imageAlign][value="' + (d.image_align || 'left') + '"]').prop('checked', true);
-    $('#imageGap').val(d.image_gap || 20);
+    var gap = d.image_gap || 0; $('#imageGap').val(gap); $('#imageGapVal').text(gap + '%');
     preview();
   });
 }
