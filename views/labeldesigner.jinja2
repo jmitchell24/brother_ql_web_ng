@@ -86,27 +86,19 @@
       </div>
 
       <div class="tab-pane fade" id="tab-image" role="tabpanel">
-        <div id="clipartSelectedInfo" class="d-flex align-items-center gap-1 mb-2 small" style="display:none">
-          <i class="bi bi-image-fill text-secondary"></i>
-          <span id="clipartSelectedName" class="text-truncate fst-italic"></span>
-          <button type="button" class="btn btn-sm btn-link p-0 ms-1 text-danger lh-1" onclick="clearClipart()" title="Remove clip art">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
         <div id="clipartPanel">
           <input type="text" class="form-control form-control-sm mb-2" id="clipartSearch"
                  placeholder="Search icons..." oninput="filterClipart()">
           <div id="clipartGrid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:210px;overflow-y:auto;overflow-x:hidden"></div>
         </div>
 
-        <button class="btn btn-sm btn-outline-secondary mt-3" type="button" id="imageClearBtn" style="display:none" onclick="clearImage()">
-          <i class="bi bi-x me-1"></i>Clear image
-        </button>
+        <div class="align-items-center gap-2 mt-3" id="imageClearBtn" style="display:none">
+          <button class="btn btn-sm btn-outline-secondary" type="button" onclick="clearImage()">
+            <img src="https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/regular/eraser.svg" width="15" height="15" class="me-1" style="vertical-align:text-bottom">Clear
+          </button>
+          <span id="clipartSelectedName" class="small fst-italic text-body-secondary text-truncate"></span>
+        </div>
         <div id="imageOptions" style="display:none">
-          <div class="form-check mt-3">
-            <input class="form-check-input" type="checkbox" id="imageBw" checked onchange="preview()">
-            <label class="form-check-label" for="imageBw">Convert to B&amp;W</label>
-          </div>
           <label class="form-label mt-3">Image position</label>
           <div class="d-flex gap-3">
             <div class="form-check">
@@ -222,7 +214,7 @@ var cachedClipartIcon = null;
 function clearImage() {
   cachedImageData = null;
   cachedClipartIcon = null;
-  $('#imageOptions, #imageClearBtn, #clipartSelectedInfo').hide();
+  $('#imageOptions, #imageClearBtn').hide();
   preview();
 }
 
@@ -318,8 +310,8 @@ function selectClipart(name) {
         cachedImageData = canvas.toDataURL('image/png').split(',')[1];
         cachedClipartIcon = name;
         $('#clipartSelectedName').text(name);
-        $('#clipartSelectedInfo').show();
-        $('#imageOptions, #imageClearBtn').show();
+        $('#imageOptions').show();
+        $('#imageClearBtn').css('display', 'flex');
         preview();
       };
       img.src = objUrl;
@@ -344,7 +336,7 @@ function formData() {
     border:        borderOn ? 'true' : 'false',
     border_width:  borderOn ? $('#borderWidth').val() : 0,
     image_data:    cachedImageData || '',
-    image_bw:      $('#imageBw').is(':checked') ? 'true' : 'false',
+    image_bw:      'true',
     image_align:   $('input[name=imageAlign]:checked').val() || 'left',
     image_gap:     $('#imageGap').val()
   };
@@ -641,12 +633,11 @@ function loadConfig(name) {
       selectClipart(d.clipart_icon); // async; calls preview() on completion
     } else if (d.image_data) {
       cachedImageData = d.image_data;
-      $('#imageOptions, #imageClearBtn').show();
-      $('#clipartSelectedInfo').hide();
+      $('#imageOptions').show();
+      $('#imageClearBtn').css('display', 'flex');
     } else {
       clearImage();
     }
-    $('#imageBw').prop('checked', d.image_bw !== 'false' && d.image_bw !== false);
     $('input[name=imageAlign][value="' + (d.image_align || 'left') + '"]').prop('checked', true);
     $('#imageGap').val(d.image_gap || 20);
     preview();
